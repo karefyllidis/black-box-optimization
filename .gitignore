@@ -137,7 +137,4 @@ Desktop.ini
 
 # Project folders
 submission-template/
-training/
-
-# Ignore all files in notebooks/weekly_review/
-notebooks/weekly_review/*
+phase_a_training/*

@@ -8,13 +8,12 @@ Nikolas Karefyllidis, PhD
 
 ```
 black-box-optimization/
-├── phase_a_training/            # Your learning materials
-│   ├── week03/
-│   ...
-│   └── week12/
+├── phase_a_training/            # Training materials and practice work (NOT git tracked)
+│   ├── docs/                    # Course materials and documentation
+│   └── notebooks/               # Training notebooks and exercises
 │
 ├── src/                        # Your main codebase (production-quality)
-│   ├── optimizers/             # Note: All .py files are placeholders (dummy for now)
+│   ├── optimizers/             # Note: All .py files and subfolders are placeholders (dummy for now)
 │   │   ├── gradient_free/
 │   │   │   ├── random_search.py
 │   │   │   ├── nelder_mead.py
@@ -91,11 +90,9 @@ black-box-optimization/
 ## Directory Descriptions
 
 ### `phase_a_training/`
-Weekly learning materials organized by week (week03-week12). Each week contains:
-- **materials/**: Course slides, readings, and provided code
-- **exercises/**: Original exercise files from the course
-- **my_work/**: Your solutions, implementations, and experiments
-- **notes.md**: Personal notes and reflections for the week
+Training materials and practice work (NOT git tracked):
+- **docs/**: Course materials, video transcripts, and documentation
+- **notebooks/**: Training notebooks and exercises
 
 ### `src/`
 Production-quality source code organized by functionality:
@@ -168,7 +165,7 @@ Documentation:
    pip install -r requirements.txt
    ```
 
-2. Explore the weekly materials in `phase_a_training/weekXX/`
+2. Explore the training materials in `phase_a_training/`
 
 3. Implement algorithms in `src/optimizers/`
 
