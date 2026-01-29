@@ -134,3 +134,9 @@ Desktop.ini
 # Project folders
 submission-template/
 phase_a_training/docs/
+
+# Private documentation folders
+docs_private/
+
+# Raw data folders
+initial_data/

@@ -1,182 +1,121 @@
-# Black-Box Optimization Project
+# Black-Box Optimization (BBO) Challenge — Stage 2 Capstone
 
-A comprehensive project structure for learning and implementing black-box optimization algorithms.
+A structured project for the Black-Box Optimization challenge (Stage 2), based on the NeurIPS 2020 BBO competition format. The goal is to explore unknown functions and identify their maxima through a documented, iterative strategy.
 
-Nikolas Karefyllidis, PhD
+Author: Nikolas Karefyllidis, PhD
 
-## Project Structure (dummy subfolders and .py for now)
+## Context and objectives
+
+- Stage 2 focus: Work only with the shared challenge dataset provided for this stage (not Stage 1 data).
+- Goal: For each of 8 black-box functions, find the input vector \(x\) that maximizes the output value \(y\).
+- Approach: Prioritize exploration, reflection, and iterative strategy over seeking a single perfect answer immediately.
+- Success: Evaluated on your process—a documented, evidence-based approach to selecting the next points. A documented failure (e.g. switching from UCB to PI after getting stuck) is valuable; a lucky guess is not.
+
+## Key deliverables
+
+1. A fully documented algorithm and model.
+2. A portfolio-ready artifact suitable for strengthening your CV and career profile.
+
+Submission materials live in `submission-template/` (data sheet, model card, README).
+
+## Challenge overview
+
+- 8 black-box functions: You do not see their equations or full visualizations.
+- Simulation: Each function represents a high-stakes task (e.g. tuning a radiation detector, controlling a robot) where data is expensive or slow to obtain.
+- Constraint: A limited number of queries per week; strategy matters.
+- Warm start: 10 \((x, y)\) pairs per function are provided as initial data.
+- Data format: NumPy `.npy` files. Each function has a folder `initial_data/function_N/` with `initial_inputs.npy` (shape n×d) and `initial_outputs.npy` (shape n). Load via `src.utils.load_challenge_data.load_function_data(N)` (read-only).
+
+### The 8 functions (brief)
+
+| # | Dim | Analogy | Notes |
+|---|-----|---------|--------|
+| 1 | 2D | Radiation detection | Sparse signal; proximity yields non-zero reading. |
+| 2 | 2D | Mystery ML model | Noisy; many local peaks; balance exploration vs exploitation. |
+| 3 | 3D | Drug discovery | Minimize side effects; \(y\) is negative of side effects. |
+| 4 | 4D | Warehouse logistics | Many local optima; output vs expensive baseline. |
+| 5 | 4D | Chemical process yield | Typically unimodal; single peak. |
+| 6 | 5D | Recipe optimization | Combined score (flavour, consistency, calories, waste, cost); bad factors negative. |
+| 7 | 6D | Hyperparameter tuning | e.g. learning rate, regularization, hidden layers; maximize accuracy/F1. |
+| 8 | 8D | High-dimensional ML model | Learning rate, batch size, layers, dropout, etc.; single validation accuracy in [0,1]. |
+
+## Weekly workflow
+
+1. Review: Download and analyze your current dataset (all previous queries and results).
+2. Choose: Run your optimizer (or manual process) to select the single best next input \(x\) for each of the 8 functions.
+3. Submit: Upload these \(x\) values to the capstone project portal.
+4. Receive: The system returns the corresponding \(y\) values.
+5. Reflect and update: Add the new points to your set and reflect—did the strategy work? Too explorative or too exploitative? How to adjust acquisition or model for the next round?
+
+## Project structure (in use)
 
 ```
 black-box-optimization/
-├── phase_a_training/            # Training materials and practice work (NOT git tracked)
-│   ├── docs/                    # Course materials and documentation
-│   └── notebooks/               # Training notebooks and exercises
+├── initial_data/                 # Raw challenge data (DO NOT MODIFY)
+│   ├── function_1/ … function_8/   # initial_inputs.npy, initial_outputs.npy each
 │
-├── src/                        # Your main codebase (production-quality)
-│   ├── optimizers/             # Note: All .py files and subfolders are placeholders (dummy for now)
-│   │   ├── gradient_free/
-│   │   │   ├── random_search.py
-│   │   │   ├── nelder_mead.py
-│   │   │   └── pattern_search.py
-│   │   ├── evolutionary/
-│   │   │   ├── genetic_algorithm.py
-│   │   │   ├── differential_evolution.py
-│   │   │   └── cma_es.py
-│   │   ├── bayesian/
-│   │   │   ├── gaussian_process.py
-│   │   │   └── acquisition.py
-│   │   └── base_optimizer.py   # Abstract base class
-│   │
-│   ├── objective/
-│   │   ├── black_box.py        # Black box wrapper
-│   │   ├── test_functions/     # Benchmark problems
-│   │   │   ├── sphere.py
-│   │   │   ├── rastrigin.py
-│   │   │   ├── rosenbrock.py
-│   │   │   └── ackley.py
-│   │   └── evaluator.py
-│   │
-│   ├── utils/
-│   │   ├── logging.py
-│   │   ├── visualization.py
-│   │   ├── metrics.py
-│   │   └── comparison.py
-│   │
-│   └── experiments/
-│       ├── runner.py
-│       └── benchmark.py
+├── phase_a_training/             # Stage 1 (reference only)
+│
+├── src/
+│   └── utils/
+│       └── load_challenge_data.py   # load_function_data(N) — read-only
 │
 ├── data/
-│   ├── problems/               # Problem instances
-│   └── results/                # Experimental results
-│       ├── training/           # Results from practice
-│       └── experiments/        # Formal experiment results
+│   ├── problems/
+│   ├── submissions/                # function_1/next_input.npy, etc.
+│   └── results/ (training/, experiments/)
 │
-├── notebooks/                  # Analysis and visualization
-│   ├── weekly_review/          # Weekly learning summaries
-│   │   ├── week03_review.ipynb
-│   │   └── ...
-│   ├── algorithm_comparison.ipynb
-│   ├── convergence_analysis.ipynb
-│   └── final_benchmarks.ipynb
+├── notebooks/
+│   └── function_1_explore.ipynb    # Load, plot, suggest next x, save for submission
 │
 ├── configs/
-│   ├── algorithms/             # Algorithm configs
-│   ├── problems/               # Problem specifications
-│   └── experiments/            # Experiment setups
-│
-├── tests/
-│   ├── test_optimizers/
-│   ├── test_objectives/
-│   └── test_utils/
-│
-├── scripts/
-│   ├── run_weekly_exercise.py
-│   ├── run_experiment.py
-│   ├── benchmark_all.py
-│   └── generate_report.py
+│   └── problems/
+│       └── function_1.yaml          # 2D Radiation Detection (dim, bounds)
 │
 ├── docs/
-│   ├── learning_log.md         # Track your progress
-│   ├── algorithms_summary.md   # Reference for algorithms learned
-│   ├── key_concepts.md         # Important concepts/formulas
-│   └── project_notes.md
+│   └── project_roadmap.md         # Planned structure — add components from here
 │
+├── submission-template/           # Data sheet, model card, README for portfolio
 ├── requirements.txt
-├── .gitignore
 └── README.md
 ```
 
-## Directory Descriptions
+Planned components (optimizers, objective/, experiments/, scripts/, tests/, extra notebooks and configs) are listed in `docs/project_roadmap.md`. Add them under the paths shown there as you incorporate them.
 
-### `phase_a_training/`
-Training materials and practice work (NOT git tracked):
-- **docs/**: Course materials, video transcripts, and documentation
-- **notebooks/**: Training notebooks and exercises
+### Write safety (avoid overwriting)
 
-### `src/`
-Production-quality source code organized by functionality:
+- **Never written to (read-only):** `initial_data/` — challenge data. The loader and notebooks only read from here; no code in this repo writes to `initial_data/`.
+- **Written only when you enable a flag** (in `notebooks/function_1_explore.ipynb`):
+  - `data/results/function_1_plot.png` — only if `IF_EXPORT_PLOT = True`
+  - `data/submissions/function_1/next_input.npy` — only if `IF_EXPORT_QUERIES = True`
+  - `data/problems/function_1/inputs.npy` and `outputs.npy` — only if `IF_APPEND_DATA = True` (append cell). This is your local copy (initial + appended points).
+- **Default:** All flags are `False`; running the notebook then writes no files. Turn only the flags you need to `True` for that run.
 
-- **optimizers/**: Implementation of various optimization algorithms
-  - **gradient_free/**: Direct search methods (Random Search, Nelder-Mead, Pattern Search)
-  - **evolutionary/**: Population-based methods (GA, DE, CMA-ES)
-  - **bayesian/**: Bayesian optimization components (GP, acquisition functions)
-  - **base_optimizer.py**: Abstract base class defining the optimizer interface
+## Allowed techniques
 
-- **objective/**: Objective function handling
-  - **black_box.py**: Wrapper for black-box functions
-  - **test_functions/**: Benchmark optimization problems
-  - **evaluator.py**: Function evaluation management
+- Random Search (including non-uniform distributions).
+- Grid Search (limited by dimensionality).
+- Bayesian Optimization (GP surrogate + acquisition, e.g. UCB or Expected Improvement).
+- Manual reasoning (e.g. plotting and guessing in 2D).
+- Custom surrogates (e.g. Random Forests, Gradient Boosted Trees instead of GPs).
 
-- **utils/**: Utility modules
-  - **logging.py**: Logging configuration
-  - **visualization.py**: Plotting and visualization tools
-  - **metrics.py**: Performance metrics calculation
-  - **comparison.py**: Algorithm comparison utilities
+You are not required to build a submission optimizer from scratch or to find the global maximum for every function; you are required to document and justify your process.
 
-- **experiments/**: Experiment management
-  - **runner.py**: Experiment execution framework
-  - **benchmark.py**: Benchmarking utilities
+## Getting started
 
-### `data/`
-Data storage:
-- **problems/**: Problem instance files
-- **results/**: Experimental results
-  - **training/**: Results from practice exercises
-  - **experiments/**: Formal experiment results
-
-### `notebooks/`
-Jupyter notebooks for analysis:
-- **weekly_review/**: Weekly learning summaries and reflections
-- **algorithm_comparison.ipynb**: Compare different algorithms
-- **convergence_analysis.ipynb**: Analyze convergence behavior
-- **final_benchmarks.ipynb**: Final benchmark results
-
-### `configs/`
-Configuration files:
-- **algorithms/**: Algorithm hyperparameter configurations
-- **problems/**: Problem specifications and settings
-- **experiments/**: Experiment setup configurations
-
-### `tests/`
-Unit and integration tests:
-- **test_optimizers/**: Tests for optimization algorithms
-- **test_objectives/**: Tests for objective functions
-- **test_utils/**: Tests for utility functions
-
-### `scripts/`
-Executable scripts:
-- **run_weekly_exercise.py**: Run weekly exercises
-- **run_experiment.py**: Execute experiments
-- **benchmark_all.py**: Run comprehensive benchmarks
-- **generate_report.py**: Generate analysis reports
-
-### `docs/`
-Documentation:
-- **learning_log.md**: Track learning progress
-- **algorithms_summary.md**: Reference guide for algorithms
-- **key_concepts.md**: Important concepts and formulas
-- **project_notes.md**: General project notes
-
-## Getting Started
-
-1. Install dependencies:
+1. Install dependencies
    ```bash
    pip install -r requirements.txt
    ```
 
-2. Explore the training materials in `phase_a_training/`
+2. Place raw challenge data in `initial_data/` (one folder per function with `initial_inputs.npy` and `initial_outputs.npy`). Do not edit the raw files.
 
-3. Implement algorithms in `src/optimizers/`
+3. Starting with function 1: open `notebooks/function_1_explore.ipynb`, run all cells to load the 10 initial points (via `load_function_data(1)`), visualize them, suggest a next \(x\), and save it to `data/submissions/function_1/next_input.npy` for upload to the portal. After you receive the new \(y\), add it to your working dataset and re-run for the next round.
 
-4. Run experiments using scripts in `scripts/`
+4. As you add strategies or reusable code, follow the paths in `docs/project_roadmap.md` (optimizers, objective/, scripts/, tests/, etc.) and record submissions in `data/submissions/`. Complete the submission using the templates in `submission-template/`.
 
-5. Analyze results in `notebooks/`
+## References
 
-## Notes
-
-- Keep production code in `src/` separate from learning exercises
-- Use `phase_a_training/` for practice and experimentation
-- Document your learning progress in `docs/learning_log.md`
-- Store experimental results in `data/results/`
-
+- NeurIPS 2020 BBO Challenge (Huawei: GPs + heteroscedasticity/non-stationarity; Nvidia: ensembles; JetBrains: GP + SVM + nearest neighbour).
+- Sample repos: [Bayesian Optimisation (soham96)](https://github.com/soham96/hyperparameter_optimisation), [Bayesian Optimization with XGBoost (solegalli)](https://github.com/solegalli/hyperparameter-optimization), [Bayesian Hyperparameter Optimization of GBM (WillKoehrsen)](https://github.com/WillKoehrsen/hyperparameter-optimization).
+- Capstone Project FAQs (see `docs_private/` if available).

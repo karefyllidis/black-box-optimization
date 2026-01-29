@@ -1,0 +1,7 @@
+# Function 1: 2D Radiation Detection
+# Sparse signal; only proximity yields non-zero reading. One hotspot.
+id: 1
+name: "2D Radiation Detection"
+dim: 2
+bounds: [[0.0, 1.0], [0.0, 1.0]]  # [x1_min, x1_max], [x2_min, x2_max]
+maximize: true
