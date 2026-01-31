@@ -69,7 +69,7 @@ black-box-optimization/
 │   └── results/                   # Exported plots (see Write safety below)
 │
 ├── notebooks/
-│   ├── function_1_explore.ipynb   # Function 1: load, visualize, GP (3 kernels), all acquisitions, baseline, select, append, save
+│   ├── function_1_Radiation-Detection.ipynb   # Function 1: load, visualize, GP (3 kernels), all acquisitions, baseline, select, append, save
 │   └── funtion_2_Mystery-ML-Model.ipynb  # Function 2: simplified (RBF only, EI+PI); see function_1 for more options if needed
 │
 ├── configs/
@@ -88,14 +88,14 @@ black-box-optimization/
 └── README.md
 ```
 
-**Notebooks:** Function 1 (`function_1_explore.ipynb`) includes more options if needed—three GP kernels (RBF, Matérn, RBF+WhiteKernel), all acquisition functions (EI, UCB, PI, Thompson, Entropy), and full baseline variants. Function 2 (`funtion_2_Mystery-ML-Model.ipynb`) is simplified (RBF only, EI+PI); use function_1 as reference for extra kernels or acquisitions.
+**Notebooks:** Function 1 (`function_1_Radiation-Detection.ipynb`) includes more options if needed—three GP kernels (RBF, Matérn, RBF+WhiteKernel), all acquisition functions (EI, UCB, PI, Thompson, Entropy), and full baseline variants. Function 2 (`funtion_2_Mystery-ML-Model.ipynb`) is simplified (RBF only, EI+PI); use function_1 as reference for extra kernels or acquisitions.
 
 Further planned components (GP surrogate, extra notebooks, etc.) are in `docs/project_roadmap.md`.
 
 ### Write safety (avoid overwriting)
 
 - **Never written to (read-only):** `initial_data/` — challenge data. The loader and notebooks only read from here. `assert_not_under_initial_data()` (in `src/utils/load_challenge_data.py`) blocks any write path under `initial_data/`; paths under `data/problems/`, `data/results/`, `data/submissions/` are allowed.
-- **Written only when you enable a flag** (in `notebooks/function_1_explore.ipynb`):
+- **Written only when you enable a flag** (in `notebooks/function_1_Radiation-Detection.ipynb`):
   - **Plots** (only if `IF_EXPORT_PLOT = True`): `data/results/function_1_observations_and_distance_contour.png`, `function_1_3d_surface_distance_colour.png`, `function_1_gp_three_kernels.png`, `function_1_all_acquisition_points.png`. Directory and format/DPI come from `PLOT_EXPORT_DIR`, `DEFAULT_EXPORT_FORMAT`, `DEFAULT_EXPORT_DPI` (see `src/utils/plot_utilities.py`).
   - **Submissions** (only if `IF_EXPORT_QUERIES = True`): `data/submissions/function_1/next_input.npy`, `next_input_portal.txt` (portal format: 6 decimals, hyphens, no spaces).
   - **Appended data** (only if `IF_APPEND_DATA = True`): `data/problems/function_1/inputs.npy`, `outputs.npy` — your local copy (initial + appended points). Run the append cell after you receive new \((x,y)\) from the portal.
@@ -120,7 +120,7 @@ You are not required to build a submission optimizer from scratch or to find the
 
 2. Place raw challenge data in `initial_data/` (one folder per function with `initial_inputs.npy` and `initial_outputs.npy`). Do not edit the raw files.
 
-3. **Function 1 notebook** (`notebooks/function_1_explore.ipynb`):  
+3. **Function 1 notebook** (`notebooks/function_1_Radiation-Detection.ipynb`):  
    - **1. Setup and load data** — Imports, repo root, load from local or `initial_data`, flags.  
    - **2. Visualize** — Grid, distance to nearest observation, 2D contour + 3D surface.  
    - **3. Suggest next point (Bayesian)** — GP surrogates (RBF, Matérn, RBF+WhiteKernel); acquisition (EI, UCB, PI, Thompson, Entropy) with RBF/Matérn; sanity checks for (0,0) and low σ; baseline (exploit, explore, **high distance** = point farthest from observations).  

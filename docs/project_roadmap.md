@@ -24,7 +24,7 @@ black-box-optimization/
 │   └── results/                  # Exported plots (observations+contour, 3D surface, GP kernels, all acquisition points)
 │
 ├── notebooks/
-│   └── function_1_explore.ipynb  # Function 1: sections 1–7 (setup, visualize, GP+acquisition, baseline, plot, select, append, save)
+│   └── function_1_Radiation-Detection.ipynb  # Function 1: sections 1–7 (setup, visualize, GP+acquisition, baseline, plot, select, append, save)
 │
 ├── configs/
 │   └── problems/                 # (removed for now; see docs_private/private_notes.md)
