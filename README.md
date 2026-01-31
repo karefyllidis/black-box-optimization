@@ -69,11 +69,11 @@ black-box-optimization/
 │   └── results/                   # Exported plots (see Write safety below)
 │
 ├── notebooks/
-│   └── function_1_explore.ipynb   # Function 1: load, visualize, GP, acquisition, baseline, select next x, append, save
+│   ├── function_1_explore.ipynb   # Function 1: load, visualize, GP (3 kernels), all acquisitions, baseline, select, append, save
+│   └── funtion_2_Mystery-ML-Model.ipynb  # Function 2: simplified (RBF only, EI+PI); see function_1 for more options if needed
 │
 ├── configs/
-│   └── problems/
-│       └── function_1.yaml        # 2D Radiation Detection (dim, bounds)
+│   └── problems/                  # (optional) problem configs; see docs_private/private_notes.md
 │
 ├── tests/
 │   ├── test_optimizers/
@@ -87,6 +87,8 @@ black-box-optimization/
 ├── requirements.txt
 └── README.md
 ```
+
+**Notebooks:** Function 1 (`function_1_explore.ipynb`) includes more options if needed—three GP kernels (RBF, Matérn, RBF+WhiteKernel), all acquisition functions (EI, UCB, PI, Thompson, Entropy), and full baseline variants. Function 2 (`funtion_2_Mystery-ML-Model.ipynb`) is simplified (RBF only, EI+PI); use function_1 as reference for extra kernels or acquisitions.
 
 Further planned components (GP surrogate, extra notebooks, etc.) are in `docs/project_roadmap.md`.
 

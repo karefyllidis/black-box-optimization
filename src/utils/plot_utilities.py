@@ -60,7 +60,8 @@ def add_colorbar(
         The colorbar instance (e.g. to call set_label / tick_params if needed).
     """
     font_size_axis = font_size_axis if font_size_axis is not None else DEFAULT_FONT_SIZE_AXIS
-    cb = plt.colorbar(mappable, ax=ax, shrink=shrink, **kwargs)
+    pad = kwargs.pop("pad", 0.04)  # fraction of axes width between plot and colorbar (matplotlib default ~0.02)
+    cb = plt.colorbar(mappable, ax=ax, shrink=shrink, pad=pad, **kwargs)
     if label is not None:
         cb.set_label(label, fontsize=font_size_axis)
     cb.ax.tick_params(labelsize=font_size_axis)

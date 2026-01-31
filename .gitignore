@@ -140,3 +140,9 @@ docs_private/
 
 # Raw data folders
 initial_data/
+
+# Submissions folder
+data/submissions/
+
+# Plots folder
+data/results/

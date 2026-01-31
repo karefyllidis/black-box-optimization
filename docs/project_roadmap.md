@@ -27,7 +27,7 @@ black-box-optimization/
 │   └── function_1_explore.ipynb  # Function 1: sections 1–7 (setup, visualize, GP+acquisition, baseline, plot, select, append, save)
 │
 ├── configs/
-│   └── problems/                 # function_1.yaml (in use)
+│   └── problems/                 # (removed for now; see docs_private/private_notes.md)
 │
 ├── tests/
 │   ├── test_optimizers/
@@ -75,7 +75,7 @@ Write safety: `assert_not_under_initial_data(path, project_root)` only forbids w
 - Add: logging.py, visualization.py, metrics.py as needed.
 
 ### `configs/problems/`
-- function_1.yaml (in use). Add function_2 … function_8 when you work on them.
+- Removed for now (no code loaded it). Add problem YAMLs + loader later if we want a single source for dim, bounds, maximize; see docs_private/private_notes.md.
 
 ### `tests/`
 - test_optimizers/, test_utils/: add tests when you add code.
