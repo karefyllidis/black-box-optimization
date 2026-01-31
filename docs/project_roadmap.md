@@ -1,8 +1,8 @@
 # Project roadmap: planned structure
 
-Components listed here are not yet in use. Add them under the paths below as you implement features. When something is in active use, you can move its description back into the README.
+Components listed here are in use or planned. Add folders back when you need them.
 
-## Full project structure (target)
+## Current project structure (simplified)
 
 ```
 black-box-optimization/
@@ -13,104 +13,59 @@ black-box-optimization/
 │
 ├── src/
 │   ├── optimizers/
-│   │   ├── gradient_free/         # Random Search, Nelder-Mead, Pattern Search
-│   │   ├── evolutionary/         # GA, Differential Evolution, CMA-ES
-│   │   ├── bayesian/              # Gaussian Process, acquisition functions
-│   │   └── base_optimizer.py      # Abstract base class
-│   ├── objective/
-│   │   ├── black_box.py           # Black-box wrapper
-│   │   ├── test_functions/        # sphere, Rastrigin, Rosenbrock, Ackley
-│   │   └── evaluator.py
-│   ├── utils/
-│   │   ├── load_challenge_data.py # (in use)
-│   │   ├── logging.py
-│   │   ├── visualization.py
-│   │   ├── metrics.py
-│   │   └── comparison.py
-│   └── experiments/
-│       ├── runner.py
-│       └── benchmark.py
+│   │   └── bayesian/             # Acquisition functions (UCB, EI, PI, Thompson Sampling, Entropy Search)
+│   └── utils/
+│       └── load_challenge_data.py # (in use)
 │
 ├── data/
-│   ├── problems/
-│   ├── submissions/
-│   └── results/ (training/, experiments/)
+│   ├── problems/                 # Local appended data (function_1/inputs.npy, outputs.npy)
+│   ├── submissions/              # Next input to submit (function_1/next_input.npy, next_input_portal.txt)
+│   └── results/                  # Exported plots
 │
 ├── notebooks/
-│   ├── weekly_review/
-│   ├── function_1_explore.ipynb  # (in use)
-│   ├── algorithm_comparison.ipynb
-│   ├── convergence_analysis.ipynb
-│   └── final_benchmarks.ipynb
+│   └── function_1_explore.ipynb  # (in use)
 │
 ├── configs/
-│   ├── algorithms/                # Algorithm hyperparameters
-│   ├── problems/                 # (function_1.yaml in use)
-│   └── experiments/              # Experiment setups
+│   └── problems/                 # function_1.yaml (in use)
 │
 ├── tests/
 │   ├── test_optimizers/
-│   ├── test_objectives/
 │   └── test_utils/
-│
-├── scripts/
-│   ├── run_experiment.py
-│   ├── benchmark_all.py
-│   └── generate_report.py
 │
 ├── docs/
 │   ├── project_roadmap.md        # (this file)
-│   ├── learning_log.md
-│   ├── algorithms_summary.md
-│   ├── key_concepts.md
-│   └── project_notes.md
+│   ├── Capstone_Project_FAQs.md
+│   └── …
 │
-├── submission-template/
+├── docs_private/                 # Private notes (gitignored); you moved notes here
+│
 ├── requirements.txt
 ├── .gitignore
 └── README.md
 ```
 
-## Planned components (incorporate gradually)
+**Removed for now (add back when needed):**
+- `configs/algorithms/`, `configs/experiments/` — algorithm/experiment configs
+- `scripts/` — run_experiment.py, benchmark_all.py
+- `tests/test_objectives/` — we have no src/objective
+- `notebooks/weekly_review/` — weekly notes
+- `src/objective/`, `src/experiments/` — see private notes (e.g. in docs_private/)
 
-### `src/optimizers/`
-- gradient_free/: Random Search, Nelder-Mead, Pattern Search.
-- evolutionary/: Genetic Algorithm, Differential Evolution, CMA-ES.
-- bayesian/: Gaussian Process surrogate, acquisition functions (UCB, EI).
-- base_optimizer.py: Abstract base class for a common interface.
+## Planned components (add as you go)
 
-### `src/objective/`
-- black_box.py: Wrapper for the black-box interface.
-- test_functions/: Benchmark problems (sphere, Rastrigin, Rosenbrock, Ackley) for local testing.
-- evaluator.py: Function evaluation management.
+### `src/optimizers/bayesian/`
+- acquisition_functions.py (in use): UCB, EI, PI, Thompson Sampling, Entropy Search.
+- Add: GP surrogate, base_optimizer.py when you run BO in code.
 
-### `src/utils/` (extras)
-- logging.py, visualization.py, metrics.py, comparison.py — add as needed.
+### `src/utils/`
+- load_challenge_data.py (in use).
+- Add: logging.py, visualization.py, metrics.py as needed.
 
-### `src/experiments/`
-- runner.py: Experiment execution framework.
-- benchmark.py: Benchmarking utilities.
-
-### `configs/algorithms/`
-- JSON configs for algorithm hyperparameters (e.g. GP kernel, acquisition params).
-
-### `configs/experiments/`
-- JSON configs for experiment setups (which functions, how many rounds, etc.).
-
-### `scripts/`
-- run_experiment.py: Run a single experiment or round.
-- benchmark_all.py: Run benchmarks across functions/algorithms.
-- generate_report.py: Generate analysis or submission reports.
+### `configs/problems/`
+- function_1.yaml (in use). Add function_2 … function_8 when you work on them.
 
 ### `tests/`
-- test_optimizers/, test_objectives/, test_utils/: Unit and integration tests as you add code.
-
-### `notebooks/`
-- weekly_review/: Weekly strategy notes and summaries.
-- algorithm_comparison.ipynb, convergence_analysis.ipynb, final_benchmarks.ipynb: Add when you compare strategies or analyze convergence.
+- test_optimizers/, test_utils/: add tests when you add code.
 
 ### `docs/`
-- learning_log.md: Track learning progress.
-- algorithms_summary.md: Reference for algorithms you implement.
-- key_concepts.md: Important concepts and formulas.
-- project_notes.md: General project notes.
+- project_roadmap.md, Capstone_Project_FAQs.md. Add learning_log.md, algorithms_summary.md, etc. as needed.

@@ -57,37 +57,44 @@ black-box-optimization/
 ├── phase_a_training/             # Stage 1 (reference only)
 │
 ├── src/
+│   ├── optimizers/
+│   │   └── bayesian/              # acquisition_functions.py (UCB, EI, PI, Thompson Sampling, Entropy Search)
 │   └── utils/
-│       └── load_challenge_data.py   # load_function_data(N) — read-only
+│       └── load_challenge_data.py # load_function_data(N) — read-only
 │
 ├── data/
-│   ├── problems/
-│   ├── submissions/                # function_1/next_input.npy, etc.
-│   └── results/ (training/, experiments/)
+│   ├── problems/                  # Local appended data (function_1/inputs.npy, outputs.npy)
+│   ├── submissions/               # Next input to submit (function_1/next_input.npy, next_input_portal.txt)
+│   └── results/                   # Exported plots
 │
 ├── notebooks/
-│   └── function_1_explore.ipynb    # Load, plot, suggest next x, save for submission
+│   └── function_1_explore.ipynb   # Load, plot, suggest next x, save for submission
 │
 ├── configs/
 │   └── problems/
-│       └── function_1.yaml          # 2D Radiation Detection (dim, bounds)
+│       └── function_1.yaml        # 2D Radiation Detection (dim, bounds)
+│
+├── tests/
+│   ├── test_optimizers/
+│   └── test_utils/
 │
 ├── docs/
-│   └── project_roadmap.md         # Planned structure — add components from here
+│   ├── project_roadmap.md        # Current structure and planned components
+│   └── Capstone_Project_FAQs.md
 │
-├── submission-template/           # Data sheet, model card, README for portfolio
+├── submission-template/          # Data sheet, model card, README for portfolio
 ├── requirements.txt
 └── README.md
 ```
 
-Planned components (optimizers, objective/, experiments/, scripts/, tests/, extra notebooks and configs) are listed in `docs/project_roadmap.md`. Add them under the paths shown there as you incorporate them.
+Further planned components (GP surrogate, extra notebooks, etc.) are in `docs/project_roadmap.md`.
 
 ### Write safety (avoid overwriting)
 
 - **Never written to (read-only):** `initial_data/` — challenge data. The loader and notebooks only read from here; no code in this repo writes to `initial_data/`.
 - **Written only when you enable a flag** (in `notebooks/function_1_explore.ipynb`):
-  - `data/results/function_1_plot.png` — only if `IF_EXPORT_PLOT = True`
-  - `data/submissions/function_1/next_input.npy` — only if `IF_EXPORT_QUERIES = True`
+  - `data/results/function_1_observations_and_distance_contour.png` and `function_1_3d_surface_distance_colour.png` — only if `IF_EXPORT_PLOT = True`
+  - `data/submissions/function_1/next_input.npy` and `next_input_portal.txt` — only if `IF_EXPORT_QUERIES = True`
   - `data/problems/function_1/inputs.npy` and `outputs.npy` — only if `IF_APPEND_DATA = True` (append cell). This is your local copy (initial + appended points).
 - **Default:** All flags are `False`; running the notebook then writes no files. Turn only the flags you need to `True` for that run.
 
@@ -95,7 +102,7 @@ Planned components (optimizers, objective/, experiments/, scripts/, tests/, extr
 
 - Random Search (including non-uniform distributions).
 - Grid Search (limited by dimensionality).
-- Bayesian Optimization (GP surrogate + acquisition, e.g. UCB or Expected Improvement).
+- **Bayesian Optimization** (GP surrogate + acquisition). This repo includes acquisition functions in `src/optimizers/bayesian/acquisition_functions.py`: UCB, Expected Improvement (EI), Probability of Improvement (PI), Thompson Sampling, Entropy Search (simplified proxy). References are in the module docstring.
 - Manual reasoning (e.g. plotting and guessing in 2D).
 - Custom surrogates (e.g. Random Forests, Gradient Boosted Trees instead of GPs).
 
@@ -110,12 +117,12 @@ You are not required to build a submission optimizer from scratch or to find the
 
 2. Place raw challenge data in `initial_data/` (one folder per function with `initial_inputs.npy` and `initial_outputs.npy`). Do not edit the raw files.
 
-3. Starting with function 1: open `notebooks/function_1_explore.ipynb`, run all cells to load the 10 initial points (via `load_function_data(1)`), visualize them, suggest a next \(x\), and save it to `data/submissions/function_1/next_input.npy` for upload to the portal. After you receive the new \(y\), add it to your working dataset and re-run for the next round.
+3. Starting with function 1: open `notebooks/function_1_explore.ipynb`, run all cells to load the 10 initial points (via `load_function_data(1)`), visualize them, suggest a next \(x\), and save it to `data/submissions/function_1/` (including `next_input_portal.txt` for copy-paste to the portal). After you receive the new \(y\), use the append cell to add it to your working dataset and re-run for the next round.
 
-4. As you add strategies or reusable code, follow the paths in `docs/project_roadmap.md` (optimizers, objective/, scripts/, tests/, etc.) and record submissions in `data/submissions/`. Complete the submission using the templates in `submission-template/`.
+4. Acquisition functions (UCB, EI, PI, etc.) live in `src/optimizers/bayesian/acquisition_functions.py`; import via `from src.optimizers.bayesian import upper_confidence_bound, expected_improvement, ...`. For more structure and planned components, see `docs/project_roadmap.md`. Complete the submission using the templates in `submission-template/`.
 
 ## References
 
 - NeurIPS 2020 BBO Challenge (Huawei: GPs + heteroscedasticity/non-stationarity; Nvidia: ensembles; JetBrains: GP + SVM + nearest neighbour).
 - Sample repos: [Bayesian Optimisation (soham96)](https://github.com/soham96/hyperparameter_optimisation), [Bayesian Optimization with XGBoost (solegalli)](https://github.com/solegalli/hyperparameter-optimization), [Bayesian Hyperparameter Optimization of GBM (WillKoehrsen)](https://github.com/WillKoehrsen/hyperparameter-optimization).
-- Capstone Project FAQs (see `docs_private/` if available).
+- Capstone Project FAQs: `docs/Capstone_Project_FAQs.md`.
