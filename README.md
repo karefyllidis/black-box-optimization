@@ -60,15 +60,16 @@ black-box-optimization/
 │   ├── optimizers/
 │   │   └── bayesian/              # acquisition_functions.py (UCB, EI, PI, Thompson Sampling, Entropy Search)
 │   └── utils/
-│       └── load_challenge_data.py # load_function_data(N) — read-only
+│       ├── load_challenge_data.py # load_function_data(N), assert_not_under_initial_data — read-only guard
+│       └── plot_utilities.py      # style_axis, add_colorbar, style_legend; DEFAULT_FONT_SIZE_*, export DPI/format
 │
 ├── data/
 │   ├── problems/                  # Local appended data (function_1/inputs.npy, outputs.npy)
 │   ├── submissions/               # Next input to submit (function_1/next_input.npy, next_input_portal.txt)
-│   └── results/                   # Exported plots
+│   └── results/                   # Exported plots (see Write safety below)
 │
 ├── notebooks/
-│   └── function_1_explore.ipynb   # Load, plot, suggest next x, save for submission
+│   └── function_1_explore.ipynb   # Function 1: load, visualize, GP, acquisition, baseline, select next x, append, save
 │
 ├── configs/
 │   └── problems/
@@ -91,11 +92,11 @@ Further planned components (GP surrogate, extra notebooks, etc.) are in `docs/pr
 
 ### Write safety (avoid overwriting)
 
-- **Never written to (read-only):** `initial_data/` — challenge data. The loader and notebooks only read from here; no code in this repo writes to `initial_data/`.
+- **Never written to (read-only):** `initial_data/` — challenge data. The loader and notebooks only read from here. `assert_not_under_initial_data()` (in `src/utils/load_challenge_data.py`) blocks any write path under `initial_data/`; paths under `data/problems/`, `data/results/`, `data/submissions/` are allowed.
 - **Written only when you enable a flag** (in `notebooks/function_1_explore.ipynb`):
-  - `data/results/function_1_observations_and_distance_contour.png` and `function_1_3d_surface_distance_colour.png` — only if `IF_EXPORT_PLOT = True`
-  - `data/submissions/function_1/next_input.npy` and `next_input_portal.txt` — only if `IF_EXPORT_QUERIES = True`
-  - `data/problems/function_1/inputs.npy` and `outputs.npy` — only if `IF_APPEND_DATA = True` (append cell). This is your local copy (initial + appended points).
+  - **Plots** (only if `IF_EXPORT_PLOT = True`): `data/results/function_1_observations_and_distance_contour.png`, `function_1_3d_surface_distance_colour.png`, `function_1_gp_three_kernels.png`, `function_1_all_acquisition_points.png`. Directory and format/DPI come from `PLOT_EXPORT_DIR`, `DEFAULT_EXPORT_FORMAT`, `DEFAULT_EXPORT_DPI` (see `src/utils/plot_utilities.py`).
+  - **Submissions** (only if `IF_EXPORT_QUERIES = True`): `data/submissions/function_1/next_input.npy`, `next_input_portal.txt` (portal format: 6 decimals, hyphens, no spaces).
+  - **Appended data** (only if `IF_APPEND_DATA = True`): `data/problems/function_1/inputs.npy`, `outputs.npy` — your local copy (initial + appended points). Run the append cell after you receive new \((x,y)\) from the portal.
 - **Default:** All flags are `False`; running the notebook then writes no files. Turn only the flags you need to `True` for that run.
 
 ## Allowed techniques
@@ -117,9 +118,17 @@ You are not required to build a submission optimizer from scratch or to find the
 
 2. Place raw challenge data in `initial_data/` (one folder per function with `initial_inputs.npy` and `initial_outputs.npy`). Do not edit the raw files.
 
-3. Starting with function 1: open `notebooks/function_1_explore.ipynb`, run all cells to load the 10 initial points (via `load_function_data(1)`), visualize them, suggest a next \(x\), and save it to `data/submissions/function_1/` (including `next_input_portal.txt` for copy-paste to the portal). After you receive the new \(y\), use the append cell to add it to your working dataset and re-run for the next round.
+3. **Function 1 notebook** (`notebooks/function_1_explore.ipynb`):  
+   - **1. Setup and load data** — Imports, repo root, load from local or `initial_data`, flags.  
+   - **2. Visualize** — Grid, distance to nearest observation, 2D contour + 3D surface.  
+   - **3. Suggest next point (Bayesian)** — GP surrogates (RBF, Matérn, RBF+WhiteKernel); acquisition (EI, UCB, PI, Thompson, Entropy) with RBF/Matérn; sanity checks for (0,0) and low σ; baseline (exploit, explore, **high distance** = point farthest from observations).  
+   - **4. Illustrate** — Single plot: all acquisition suggestions + Naive exploit, Random explore, High distance on distance contour.  
+   - **5. Select next query** — Default: `next_x = next_x_high_dist` (high distance). Alternatives: `next_x_explore`, `x_best_EI_RBF`, `next_x_exploit`.  
+   - **6. Append new feedback** — After portal returns \((x,y)\), run with `IF_APPEND_DATA = True` to append to `data/problems/function_1/`.  
+   - **7. Save suggestion** — With `IF_EXPORT_QUERIES = True`, write `next_x` to `data/submissions/function_1/` (npy + portal-format txt).  
+   After you receive the new \(y\), run section 6 (Append) then re-run the notebook for the next round.
 
-4. Acquisition functions (UCB, EI, PI, etc.) live in `src/optimizers/bayesian/acquisition_functions.py`; import via `from src.optimizers.bayesian import upper_confidence_bound, expected_improvement, ...`. For more structure and planned components, see `docs/project_roadmap.md`. Complete the submission using the templates in `submission-template/`.
+4. Acquisition functions live in `src/optimizers/bayesian/acquisition_functions.py`; import via `from src.optimizers.bayesian.acquisition_functions import expected_improvement, upper_confidence_bound, ...`. Plot styling: `src/utils/plot_utilities.py` (`style_axis`, `add_colorbar`, `DEFAULT_FONT_SIZE_AXIS`, etc.). For more structure and planned components, see `docs/project_roadmap.md`. Complete the submission using the templates in `submission-template/`.
 
 ## References
 

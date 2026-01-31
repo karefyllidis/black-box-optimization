@@ -57,11 +57,12 @@ def assert_not_under_initial_data(path: Path, project_root: Path | None = None) 
     Call this before any write so we never overwrite original data.
     """
     path = Path(path).resolve()
-    root = (project_root or get_initial_data_root()).resolve()
+    # Forbid writes only under initial_data, not under project root
+    root = (Path(project_root) / "initial_data").resolve() if project_root is not None else get_initial_data_root().resolve()
     try:
         path.relative_to(root)
     except ValueError:
-        return  # path is not under root — OK
+        return  # path is not under initial_data — OK
     raise PermissionError(
         f"Refusing to write under {root} (original data is read-only). "
         "Use data/problems/ or data/results/ or data/submissions/ instead."
