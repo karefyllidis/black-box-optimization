@@ -69,9 +69,16 @@ black-box-optimization/
 │   └── results/                   # Exported plots (see Write safety below)
 │
 ├── notebooks/
-│   ├── function_1_Radiation-Detection.ipynb   # Function 1: load, visualize, GP (3 kernels), all acquisitions, baseline, select, append, save
-│   └── funtion_2_Mystery-ML-Model.ipynb  # Function 2: simplified (RBF only, EI+PI); see function_1 for more options if needed
+│   ├── function_1_Radiation-Detection.ipynb   # Function 1 (2D): full options — 3 GP kernels, all acquisitions; use as reference
+│   ├── funtion_2_Mystery-ML-Model.ipynb       # Function 2 (2D): simplified (RBF, EI+PI+UCB)
+│   ├── function_3_Drug-Discovery.ipynb        # Function 3 (3D): minimization→maximization, 2D pairwise + 3D scatter
+│   ├── function_4_Warehouse-Logistics.ipynb  # Function 4 (4D): 6 pairwise 2D plots, GP slices, acquisition
+│   ├── function_5_Chemical-Process-Yield.ipynb   # Function 5 (4D): same workflow as function_4
+│   ├── function_6_Recipe-Optimization.ipynb      # Function 6 (5D): 10 pairwise plots
+│   ├── function_7_Hyperparameter-Tuning.ipynb    # Function 7 (6D): 15 pairwise plots
+│   └── function_8_High-dimensional-ML-Model.ipynb # Function 8 (8D): 28 pairwise plots
 │
+├── run_all.py                  # Print submission summary; optional: --execute-notebooks, --skip-scripts
 ├── configs/
 │   └── problems/                  # (optional) problem configs; see docs_private/private_notes.md
 │
@@ -88,7 +95,7 @@ black-box-optimization/
 └── README.md
 ```
 
-**Notebooks:** Function 1 (`function_1_Radiation-Detection.ipynb`) includes more options if needed—three GP kernels (RBF, Matérn, RBF+WhiteKernel), all acquisition functions (EI, UCB, PI, Thompson, Entropy), and full baseline variants. Function 2 (`funtion_2_Mystery-ML-Model.ipynb`) is simplified (RBF only, EI+PI); use function_1 as reference for extra kernels or acquisitions.
+**Notebooks:** One notebook per function (1–8). **Function 1** has the most options (three GP kernels, all acquisition functions, baselines); use it as reference if you need more than RBF+EI/PI/UCB. Function 2 is simplified (RBF, EI+PI+UCB). Functions 3–8 use the same Bayesian optimisation workflow with dimension-specific pairwise plots and GP slices (3D→3 pairs, 4D→6, 5D→10, 6D→15, 8D→28).
 
 Further planned components (GP surrogate, extra notebooks, etc.) are in `docs/project_roadmap.md`.
 
@@ -131,6 +138,14 @@ You are not required to build a submission optimizer from scratch or to find the
    After you receive the new \(y\), run section 6 (Append) then re-run the notebook for the next round.
 
 4. Acquisition functions live in `src/optimizers/bayesian/acquisition_functions.py`; import via `from src.optimizers.bayesian.acquisition_functions import expected_improvement, upper_confidence_bound, ...`. Plot styling: `src/utils/plot_utilities.py` (`style_axis`, `add_colorbar`, `DEFAULT_FONT_SIZE_AXIS`, etc.). For more structure and planned components, see `docs/project_roadmap.md`. Complete the submission using the templates in `submission-template/`.
+
+5. **Submission summary** — From the project root, run:
+   ```bash
+   python run_all.py
+   ```
+   This prints a **submission summary**: full portal strings (copy-paste per function) and where files live. Options:
+   - `python run_all.py --execute-notebooks` — run all 8 function notebooks (writes `data/submissions/function_N/`; needs `nbconvert`).
+   - `python run_all.py --skip-scripts` — skip running any scripts in `scripts/` (if present); only show the summary.
 
 ## References
 
