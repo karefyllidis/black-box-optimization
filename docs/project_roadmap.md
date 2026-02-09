@@ -76,6 +76,7 @@ Write safety: `assert_not_under_initial_data(path, project_root)` only forbids w
 
 ### `src/utils/`
 - load_challenge_data.py (in use). plot_utilities.py (in use): style_axis, add_colorbar, style_legend, DEFAULT_FONT_SIZE_*, DEFAULT_EXPORT_*.
+- sampling_utils.py (in use): sample_candidates(n, dim, method='random'|'lhs'|'sobol'|'grid') for uniform/space-filling candidate pools in [0,1]^d (LHS, Sobol, or regular lattice/grid); use in notebooks for better coverage than plain random.
 - Add: logging.py, visualization.py, metrics.py as needed.
 
 ### `configs/problems/`

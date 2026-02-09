@@ -141,8 +141,9 @@ docs_private/
 # Raw data folders
 initial_data/
 
-# Submissions folder
+# Submissions and problems folder
 data/submissions/
+data/problems/
 
 # Plots folder
 data/results/

@@ -15,6 +15,7 @@ from .plot_utilities import (
     style_axis_3d,
     style_legend,
 )
+from .sampling_utils import sample_candidates
 
 __all__ = [
     "DEFAULT_EXPORT_DPI",
@@ -32,4 +33,5 @@ __all__ = [
     "style_axis",
     "style_axis_3d",
     "style_legend",
+    "sample_candidates",
 ]

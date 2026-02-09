@@ -61,7 +61,8 @@ black-box-optimization/
 │   │   └── bayesian/              # acquisition_functions.py (UCB, EI, PI, Thompson Sampling, Entropy Search)
 │   └── utils/
 │       ├── load_challenge_data.py # load_function_data(N), assert_not_under_initial_data — read-only guard
-│       └── plot_utilities.py      # style_axis, add_colorbar, style_legend; DEFAULT_FONT_SIZE_*, export DPI/format
+│       ├── plot_utilities.py      # style_axis, add_colorbar, style_legend; DEFAULT_FONT_SIZE_*, export DPI/format
+│       └── sampling_utils.py      # sample_candidates(n, dim, method='random'|'lhs'|'sobol'|'grid') — uniform/space-filling candidates in [0,1]^d
 │
 ├── data/
 │   ├── problems/                  # Local appended data (function_1/inputs.npy, outputs.npy)
@@ -112,7 +113,7 @@ Further planned components (GP surrogate, extra notebooks, etc.) are in `docs/pr
 
 - Random Search (including non-uniform distributions).
 - Grid Search (limited by dimensionality).
-- **Bayesian Optimization** (GP surrogate + acquisition). This repo includes acquisition functions in `src/optimizers/bayesian/acquisition_functions.py`: UCB, Expected Improvement (EI), Probability of Improvement (PI), Thompson Sampling, Entropy Search (simplified proxy). References are in the module docstring.
+- **Bayesian Optimization** (GP surrogate + acquisition). This repo includes acquisition functions in `src/optimizers/bayesian/acquisition_functions.py`: UCB, Expected Improvement (EI), Probability of Improvement (PI), Thompson Sampling, Entropy Search (simplified proxy). References are in the module docstring. For maximising acquisition over the input space, candidate points can be generated with **uniform coverage** via `src/utils/sampling_utils.py`: `sample_candidates(n, dim, method='grid'|'lhs'|'sobol'|'random')` — e.g. `'grid'` for a regular lattice, `'lhs'` or `'sobol'` for space-filling.
 - Manual reasoning (e.g. plotting and guessing in 2D).
 - Custom surrogates (e.g. Random Forests, Gradient Boosted Trees instead of GPs).
 
@@ -130,7 +131,7 @@ You are not required to build a submission optimizer from scratch or to find the
 3. **Function 1 notebook** (`notebooks/function_1_Radiation-Detection.ipynb`):  
    - **1. Setup and load data** — Imports, repo root, load from local or `initial_data`, flags.  
    - **2. Visualize** — Grid, distance to nearest observation, 2D contour + 3D surface.  
-   - **3. Suggest next point (Bayesian)** — GP surrogates (RBF, Matérn, RBF+WhiteKernel); acquisition (EI, UCB, PI, Thompson, Entropy) with RBF/Matérn; sanity checks for (0,0) and low σ; baseline (exploit, explore, **high distance** = point farthest from observations).  
+   - **3. Suggest next point (Bayesian)** — GP surrogates (RBF, Matérn, RBF+WhiteKernel); acquisition (EI, UCB, PI, Thompson, Entropy) with RBF/Matérn, maximised over **uniform-coverage candidates** (`sample_candidates(..., method='grid')` by default; set `CANDIDATE_SAMPLING_METHOD` to `'lhs'`, `'sobol'`, or `'random'` to compare); sanity checks for (0,0) and low σ; baseline (exploit, explore, **high distance** = point farthest from observations on the same candidate set).  
    - **4. Illustrate** — Single plot: all acquisition suggestions + Naive exploit, Random explore, High distance on distance contour.  
    - **5. Select next query** — Default: `next_x = next_x_high_dist` (high distance). Alternatives: `next_x_explore`, `x_best_EI_RBF`, `next_x_exploit`.  
    - **6. Append new feedback** — After portal returns \((x,y)\), run with `IF_APPEND_DATA = True` to append to `data/problems/function_1/`.  
