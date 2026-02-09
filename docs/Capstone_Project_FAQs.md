@@ -223,6 +223,10 @@ No. During optimisation, the outputs of the objective functions **may be negativ
 
 Some real-world analogies involve minimisation (or side effects). These are transformed into maximisation by **negating the output** so that higher values are better. Your optimisation algorithm will always aim to maximise this transformed score.
 
+### Q: F3 and F6 give negative outputs. Are they still maximization? Which value is better?
+
+**Yes. All Capstone functions, including F3 and F6, are maximization problems.** Although their real-world motivations involve minimizing something (e.g. side effects or penalties), the outputs you’re given have already been transformed. You should **always prefer the higher numerical value**. If the outputs are negative, that means **−1 is better than −2**. (Clarification from the course support team.)
+
 ---
 
 ## Method and process

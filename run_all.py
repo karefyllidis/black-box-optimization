@@ -44,6 +44,7 @@ def execute_notebooks():
 
 def submission_summary():
     sub_dir = ROOT / "data" / "submissions"
+    problems_dir = ROOT / "data" / "problems"
     portal = {}
     for n in range(1, 9):
         txt = sub_dir / f"function_{n}" / "next_input_portal.txt"
@@ -55,6 +56,21 @@ def submission_summary():
             portal[n] = "-".join(f"{x:.6f}" for x in np.load(npy).ravel())
         else:
             portal[n] = "(not generated)"
+    # Warn if appended data is missing — notebooks then fall back to initial_data only and may suggest the same point again
+    missing = []
+    for n in range(1, 9):
+        fn_dir = problems_dir / f"function_{n}"
+        csv_path = fn_dir / "observations.csv"
+        has_data = csv_path.exists()
+        if not has_data:
+            missing.append(n)
+    if missing:
+        print(
+            "NOTE: data/problems/ has no appended data for function(s)",
+            missing,
+            "\n  → Notebooks will load initial_data only and may suggest the SAME point as last time.\n"
+            "  → Run scripts/append_weekN_results.py after portal feedback, then re-run notebooks.",
+        )
     return portal
 
 

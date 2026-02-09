@@ -2,14 +2,95 @@
 
 A structured project for the Black-Box Optimization challenge (Stage 2), based on the NeurIPS 2020 BBO competition format. The goal is to explore unknown functions and identify their maxima through a documented, iterative strategy.
 
-Author: Nikolas Karefyllidis, PhD
+**Author:** Nikolas Karefyllidis, PhD
 
-## Context and objectives
+---
 
-- Stage 2 focus: Work only with the shared challenge dataset provided for this stage (not Stage 1 data).
-- Goal: For each of 8 black-box functions, find the input vector \(x\) that maximizes the output value \(y\).
-- Approach: Prioritize exploration, reflection, and iterative strategy over seeking a single perfect answer immediately.
-- Success: Evaluated on your process—a documented, evidence-based approach to selecting the next points. A documented failure (e.g. switching from UCB to PI after getting stuck) is valuable; a lucky guess is not.
+## Section 1: Project overview
+
+### What is the BBO capstone and its purpose?
+
+The BBO (Black-Box Optimization) capstone simulates a setting where we must optimize an **unknown** objective function using only a limited number of expensive evaluations. We are not given the formula or a full picture of the landscape—only initial \((x, y)\) pairs and, after each submission, the single new \(y\) returned by the system for the \(x\) we chose. The purpose is to design and document a **strategy** for choosing the next query at each round, balancing exploration of uncertain regions with exploitation of promising ones.
+
+### Overall goal and relevance
+
+- **Goal:** For each of **8 black-box functions**, find an input vector \(x\) that **maximizes** the output value \(y\). Success is judged on the quality and justification of the process (e.g. choice of surrogate, acquisition, and exploration–exploitation trade-off), not only on hitting a global maximum.
+- **Relevance:** In real-world ML and operations, we often face expensive black-box objectives—hyperparameter tuning, A/B tests, drug discovery, process control—where each evaluation is costly or slow. BBO teaches how to make each query count and how to communicate and defend technical choices.
+
+### How this supports my career
+
+This project demonstrates the ability to structure an optimization pipeline, implement and compare acquisition functions, and document reasoning in a way that is reusable and portfolio-ready. It supports my current and future work by showing evidence-based decision-making, clear technical communication, and familiarity with Bayesian optimization and related tools (GPs, acquisition functions, space-filling sampling).
+
+---
+
+## Section 2: Inputs and outputs
+
+### What the model receives
+
+- **Initial data (per function):** A set of \((x, y)\) pairs in NumPy format:
+  - `initial_inputs.npy`: shape `(n, d)` — \(n\) input points (e.g. 10–40 depending on function), each of dimension \(d\) (2–8).
+  - `initial_outputs.npy`: shape `(n,)` — the corresponding objective values.
+- **Domain:** All inputs lie in \([0, 1]^d\) (or effectively \([0, 0.999999]\) for portal submission).
+- **Query format for submission:** A single vector \(x\) per function, submitted as a string with **exactly six decimal places**, hyphen-separated, no spaces, e.g.  
+  `0.498317-0.625531` (2D) or `0.123456-0.234567-0.345678` (3D).
+
+### What the model returns (and what the portal returns)
+
+- **We submit:** One input \(x\) per function (8 strings per week).
+- **Portal returns:** The **same** inputs we submitted and the **corresponding** \(y\) value for each. We then append these \((x, y)\) pairs to our local dataset for the next round.
+- **Output (objective):** A single real number per query. For all functions, **higher is better** (maximization). For F3 and F6, \(y\) can be negative; in that case e.g. \(-1\) is better than \(-2\).
+
+### Example
+
+| Function | Dimensions | Example input (portal format)     | Example output |
+|----------|------------|------------------------------------|----------------|
+| 1        | 2          | `0.002223-0.994219`               | 0              |
+| 3        | 3          | `0.999764-0.052131-0.975598`      | -0.412…        |
+| 8        | 8          | `0.050323-0.062907-…-0.836079`    | 9.898…         |
+
+---
+
+## Section 3: Challenge objectives
+
+### Maximization
+
+- **All 8 functions are maximization problems.** We always prefer a **higher** numerical value of \(y\). If outputs are negative (e.g. F3, F6), \(-1\) is better than \(-2\). Real-world analogies (e.g. “minimize side effects”) are already encoded in the transformed objective we receive.
+
+### Constraints and limitations
+
+- **Limited queries:** One submission per function per week; we must make each query count.
+- **Unknown structure:** We do not see the equation or full surface; we only have initial data and the feedback from our own submissions.
+- **Response delay:** Results arrive after submission; we plan the next round using the updated dataset (initial + all previous feedback).
+- **Dimensions:** Functions 1–2 are 2D; 3 is 3D; 4–5 are 4D; 6 is 5D; 7 is 6D; 8 is 8D. Visualization and candidate sampling scale with dimension (e.g. pairwise plots, space-filling designs).
+
+---
+
+## Section 4: Technical approach (living record)
+
+*This section is updated as the approach evolves across submission rounds.*
+
+### Methods and modelling
+
+- **Surrogate:** Gaussian Process (GP) regression (e.g. `sklearn.gaussian_process.GaussianProcessRegressor`) with RBF and/or Matérn kernels. Function 1 notebook also compares RBF, Matérn, and RBF+WhiteKernel.
+- **Acquisition functions** (in `src/optimizers/bayesian/acquisition_functions.py`): Expected Improvement (EI), Probability of Improvement (PI), Upper Confidence Bound (UCB), Thompson Sampling, and a simplified Entropy Search proxy. All are used in a **maximize-acquisition** step over a candidate set.
+- **Candidate set:** Instead of optimizing acquisition on a tiny random sample, candidates are generated for **uniform or space-filling coverage** in \([0,1]^d\) via `src/utils/sampling_utils.sample_candidates(n, dim, method='sobol'|'lhs'|'grid'|'random')` (Sobol, LHS, grid, or random). This improves exploration and avoids missing good regions.
+- **Baselines:** “Exploit” (current best point), “Explore” (random candidate), and **“High distance”** (point farthest from existing observations on the same candidate grid)—useful for sparse, peak-like functions (e.g. Function 1).
+
+### Exploration vs exploitation
+
+- **EI / PI:** Favour points that are likely to improve over the current best; more exploitation when the GP is confident.
+- **UCB:** Explicit trade-off via \(\kappa\) (e.g. \(\mu + \kappa\sigma\)); higher \(\kappa\) encourages exploration.
+- **Thompson Sampling:** Random draw from the GP posterior; natural exploration through randomness.
+- **High-distance baseline:** Purely exploratory; maximises distance to nearest observation to cover under-sampled regions. Used as default for Function 1 in early rounds when the peak location is still uncertain.
+- Strategy is **per-function**: e.g. more exploration for noisy or multi-peak functions (2, 4), more exploitation once a clear basin is found; high-distance or EI for sparse 2D (1).
+
+### What makes the approach thoughtful
+
+- **Documented choices:** Kernel choice, acquisition choice, and default “next point” (e.g. high-distance vs EI best) are stated and justified in the notebook.
+- **Reproducibility:** Fixed seeds, explicit candidate method (e.g. Sobol), and flags for export/append so that runs are repeatable.
+- **Living record:** Section 4 and the notebooks are updated after each round (e.g. “Week 2: switched default to EI for F1 after feedback”; “F5: UCB with lower \(\kappa\) to exploit”).
+
+---
 
 ## Key deliverables
 
@@ -18,7 +99,9 @@ Author: Nikolas Karefyllidis, PhD
 
 Submission materials live in `submission-template/` (data sheet, model card, README).
 
-## Challenge overview
+---
+
+## Challenge overview (reference)
 
 - 8 black-box functions: You do not see their equations or full visualizations.
 - Simulation: Each function represents a high-stakes task (e.g. tuning a radiation detector, controlling a robot) where data is expensive or slow to obtain.
@@ -32,10 +115,10 @@ Submission materials live in `submission-template/` (data sheet, model card, REA
 |---|-----|---------|--------|
 | 1 | 2D | Radiation detection | Sparse signal; proximity yields non-zero reading. |
 | 2 | 2D | Mystery ML model | Noisy; many local peaks; balance exploration vs exploitation. |
-| 3 | 3D | Drug discovery | Minimize side effects; \(y\) is negative of side effects. |
+| 3 | 3D | Drug discovery | Maximize transformed output; \(y\) can be negative—higher is better (e.g. −1 > −2). |
 | 4 | 4D | Warehouse logistics | Many local optima; output vs expensive baseline. |
 | 5 | 4D | Chemical process yield | Typically unimodal; single peak. |
-| 6 | 5D | Recipe optimization | Combined score (flavour, consistency, calories, waste, cost); bad factors negative. |
+| 6 | 5D | Recipe optimization | Maximize transformed score; \(y\) can be negative—higher is better (e.g. −1 > −2). |
 | 7 | 6D | Hyperparameter tuning | e.g. learning rate, regularization, hidden layers; maximize accuracy/F1. |
 | 8 | 8D | High-dimensional ML model | Learning rate, batch size, layers, dropout, etc.; single validation accuracy in [0,1]. |
 
@@ -65,9 +148,9 @@ black-box-optimization/
 │       └── sampling_utils.py      # sample_candidates(n, dim, method='random'|'lhs'|'sobol'|'grid') — uniform/space-filling candidates in [0,1]^d
 │
 ├── data/
-│   ├── problems/                  # Local appended data (function_1/inputs.npy, outputs.npy)
-│   ├── submissions/               # Next input to submit (function_1/next_input.npy, next_input_portal.txt)
-│   └── results/                   # Exported plots (see Write safety below)
+│   ├── problems/                  # Appended data: only observations.csv (no .npy under data/; initial_data/ is read-only .npy)
+│   └── submissions/               # Next input to submit (function_1/next_input.npy, next_input_portal.txt)
+├── data/results/                  # Exported plots (when IF_EXPORT_PLOT = True; see Write safety below)
 │
 ├── notebooks/
 │   ├── function_1_Radiation-Detection.ipynb   # Function 1 (2D): full options — 3 GP kernels, all acquisitions; use as reference
@@ -102,11 +185,11 @@ Further planned components (GP surrogate, extra notebooks, etc.) are in `docs/pr
 
 ### Write safety (avoid overwriting)
 
-- **Never written to (read-only):** `initial_data/` — challenge data. The loader and notebooks only read from here. `assert_not_under_initial_data()` (in `src/utils/load_challenge_data.py`) blocks any write path under `initial_data/`; paths under `data/problems/`, `data/results/`, `data/submissions/` are allowed.
+- **Never written to (read-only):** `initial_data/` — challenge data. The loader and notebooks only read from here. `assert_not_under_initial_data()` (in `src/utils/load_challenge_data.py`) blocks any write path under `initial_data/`; paths under `data/problems/`, `data/submissions/`, and `data/results/` are allowed.
 - **Written only when you enable a flag** (in `notebooks/function_1_Radiation-Detection.ipynb`):
-  - **Plots** (only if `IF_EXPORT_PLOT = True`): `data/results/function_1_observations_and_distance_contour.png`, `function_1_3d_surface_distance_colour.png`, `function_1_gp_three_kernels.png`, `function_1_all_acquisition_points.png`. Directory and format/DPI come from `PLOT_EXPORT_DIR`, `DEFAULT_EXPORT_FORMAT`, `DEFAULT_EXPORT_DPI` (see `src/utils/plot_utilities.py`).
+  - **Plots** (only if `IF_EXPORT_PLOT = True`): `data/results/function_1_observations_and_distance_contour.png`, `data/results/function_1_3d_surface_distance_colour.png`, etc. Directory and format/DPI come from `PLOT_EXPORT_DIR` (default `repo_root / "data" / "results"`), `DEFAULT_EXPORT_FORMAT`, `DEFAULT_EXPORT_DPI` (see `src/utils/plot_utilities.py`).
   - **Submissions** (only if `IF_EXPORT_QUERIES = True`): `data/submissions/function_1/next_input.npy`, `next_input_portal.txt` (portal format: 6 decimals, hyphens, no spaces).
-  - **Appended data** (only if `IF_APPEND_DATA = True`): `data/problems/function_1/inputs.npy`, `outputs.npy` — your local copy (initial + appended points). Run the append cell after you receive new \((x,y)\) from the portal.
+  - **Appended data** (only if `IF_APPEND_DATA = True`): `data/problems/function_1/observations.csv` — your local copy (initial + appended points). Under `data/` we operate only with CSV; no `.npy` in `data/problems/`. Run the append cell after you receive new \((x,y)\) from the portal.
 - **Default:** All flags are `False`; running the notebook then writes no files. Turn only the flags you need to `True` for that run.
 
 ## Allowed techniques

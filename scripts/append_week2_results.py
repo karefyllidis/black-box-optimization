@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
 Append Week 2 portal results to local datasets (data/problems/function_N/).
-Run from project root. Loads existing data (initial + any Week 1), then appends the new (x, y).
-Idempotent: if the Week 2 point is already in the saved dataset, skips appending (safe to run multiple times).
+Under data/ we use only CSV: observations.csv. No .npy in data/problems/.
+Run from project root. Idempotent: skips if Week 2 point already in dataset.
 """
 import sys
 from pathlib import Path
@@ -11,7 +11,11 @@ import numpy as np
 ROOT = Path(__file__).resolve().parent.parent
 if (ROOT / "src").exists():
     sys.path.insert(0, str(ROOT))
-from src.utils.load_challenge_data import load_function_data
+from src.utils.load_challenge_data import (
+    load_function_data,
+    load_problem_data_csv,
+    save_problem_data_csv,
+)
 
 # Week 2 results from portal (input list, output scalar per function)
 WEEK2 = {
@@ -25,15 +29,23 @@ WEEK2 = {
     8: (np.array([0.050323, 0.062907, 0.187347, 0.032471, 0.743353, 0.723330, 0.136056, 0.836079]), 9.8985683697244),
 }
 
-# Tolerance for "same point" check (avoid duplicate append due to float noise)
 ATOL = 1e-9
+
+CSV_NAME = "observations.csv"
 
 
 def _already_appended(X_saved: np.ndarray, x_new: np.ndarray) -> bool:
-    """True if x_new (1, d) is already a row in X_saved (n, d) within ATOL."""
     if X_saved is None or len(X_saved) == 0:
         return False
     return np.any(np.all(np.isclose(X_saved, x_new.ravel(), atol=ATOL), axis=1))
+
+
+def _load_current(out_dir: Path, fid: int):
+    """Load current data from CSV only (under data/ we use only CSV). Returns (X, y) or None."""
+    csv_path = out_dir / CSV_NAME
+    if csv_path.exists():
+        return load_problem_data_csv(csv_path)
+    return None
 
 
 def main():
@@ -43,38 +55,28 @@ def main():
         x_new, y_new = WEEK2[fid]
         x_new = np.asarray(x_new, dtype=np.float64).reshape(1, -1)
         out_dir = problems_dir / f"function_{fid}"
-        # Function 1 uses initial_inputs.npy / initial_outputs.npy; others use inputs.npy / outputs.npy
-        prefix = "initial_" if fid == 1 else ""
-        inputs_path = out_dir / f"{prefix}inputs.npy"
-        outputs_path = out_dir / f"{prefix}outputs.npy"
+        csv_path = out_dir / CSV_NAME
 
-        if inputs_path.exists() and outputs_path.exists():
-            X_cur = np.load(inputs_path)
-            y_cur = np.load(outputs_path)
-            if y_cur.ndim > 1:
-                y_cur = y_cur.squeeze()
+        current = _load_current(out_dir, fid)
+        if current is not None:
+            X_cur, y_cur = current
             if _already_appended(X_cur, x_new):
-                print(f"Function {fid}: already appended (Week 2 point in dataset), skip. Points: {len(y_cur)}")
+                print(f"Function {fid}: already appended (Week 2 in dataset), skip. Points: {len(y_cur)}")
                 continue
             assert x_new.shape[1] == X_cur.shape[1], f"Function {fid}: dimension mismatch"
             X_updated = np.vstack([X_cur, x_new])
             y_updated = np.append(y_cur, y_new)
-            out_dir.mkdir(parents=True, exist_ok=True)
-            np.save(inputs_path, X_updated)
-            np.save(outputs_path, y_updated)
-            print(f"Function {fid}: {len(y_cur)} -> {len(y_updated)} points (appended Week 2), y range [{y_updated.min():.6g}, {y_updated.max():.6g}]")
-            continue
+        else:
+            X_init, y_init = load_function_data(fid)
+            assert x_new.shape[1] == X_init.shape[1], f"Function {fid}: dimension mismatch"
+            X_updated = np.vstack([X_init, x_new])
+            y_updated = np.append(y_init, y_new)
 
-        # No existing appended file: load initial_data and append Week 2
-        X_init, y_init = load_function_data(fid)
-        assert x_new.shape[1] == X_init.shape[1], f"Function {fid}: dimension mismatch"
-        X_updated = np.vstack([X_init, x_new])
-        y_updated = np.append(y_init, y_new)
         out_dir.mkdir(parents=True, exist_ok=True)
-        np.save(inputs_path, X_updated)
-        np.save(outputs_path, y_updated)
-        print(f"Function {fid}: {X_init.shape[0]} -> {X_updated.shape[0]} points (initial + Week 2), y range [{y_updated.min():.6g}, {y_updated.max():.6g}]")
-    print("Done. data/problems/function_1..8 updated. Re-run notebooks to use appended points for Week 3.")
+        save_problem_data_csv(csv_path, X_updated, y_updated)
+        n = len(y_updated)
+        print(f"Function {fid}: {n} points -> {csv_path.name}")
+    print("Done. data/problems/function_1..8 updated (CSV). Re-run notebooks for Week 3.")
 
 
 if __name__ == "__main__":

@@ -19,9 +19,9 @@ black-box-optimization/
 │       └── plot_utilities.py     # style_axis, add_colorbar, style_legend; DEFAULT_FONT_SIZE_*, DEFAULT_EXPORT_*
 │
 ├── data/
-│   ├── problems/                 # Local appended data (function_1/inputs.npy, outputs.npy)
+│   ├── problems/                 # Local appended data: only observations.csv per function (no .npy under data/)
 │   ├── submissions/              # Next input to submit (function_1/next_input.npy, next_input_portal.txt)
-│   └── results/                  # Exported plots (observations+contour, 3D surface, GP kernels, all acquisition points)
+│   (data/results/)               # Exported plots (observations+contour, 3D surface, GP kernels, all acquisition points)
 │
 ├── notebooks/
 │   ├── function_1_Radiation-Detection.ipynb … function_8_High-dimensional-ML-Model.ipynb  # One per function (1–8); same workflow, dimension-specific pairwise plots

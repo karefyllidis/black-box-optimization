@@ -145,5 +145,5 @@ initial_data/
 data/submissions/
 data/problems/
 
-# Plots folder
+# Plots folder (exported figures from notebooks)
 data/results/

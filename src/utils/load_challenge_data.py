@@ -51,6 +51,46 @@ def load_function_data(
     return X, y
 
 
+def load_problem_data_csv(csv_path: Path) -> tuple[np.ndarray, np.ndarray]:
+    """
+    Load (X, y) from a problem observations CSV (header: x1,x2,...,xd,y).
+    Returns (X, y) with X shape (n, d) and y shape (n,).
+    """
+    import csv
+    with open(csv_path, newline="") as f:
+        reader = csv.reader(f)
+        header = next(reader)
+        rows = list(reader)
+    if not rows:
+        raise ValueError(f"CSV has no data rows: {csv_path}")
+    n, ncols = len(rows), len(header)
+    if ncols < 2:
+        raise ValueError(f"CSV must have at least x1 and y columns: {csv_path}")
+    # Last column is y
+    X = np.array([[float(r[i]) for i in range(ncols - 1)] for r in rows], dtype=np.float64)
+    y = np.array([float(r[ncols - 1]) for r in rows], dtype=np.float64)
+    return X, y
+
+
+def save_problem_data_csv(csv_path: Path, X: np.ndarray, y: np.ndarray) -> None:
+    """
+    Save (X, y) to a problem observations CSV (header: x1,x2,...,xd,y).
+    X shape (n, d), y shape (n,).
+    """
+    import csv
+    X = np.asarray(X)
+    y = np.asarray(y).ravel()
+    assert len(y) == len(X), "X and y length mismatch"
+    d = X.shape[1]
+    csv_path.parent.mkdir(parents=True, exist_ok=True)
+    header = [f"x{i+1}" for i in range(d)] + ["y"]
+    with open(csv_path, "w", newline="") as f:
+        writer = csv.writer(f)
+        writer.writerow(header)
+        for i in range(len(y)):
+            writer.writerow(list(X[i]) + [float(y[i])])
+
+
 def assert_not_under_initial_data(path: Path, project_root: Path | None = None) -> None:
     """
     Raise if path is under initial_data (original challenge data is read-only).
@@ -65,5 +105,5 @@ def assert_not_under_initial_data(path: Path, project_root: Path | None = None) 
         return  # path is not under initial_data — OK
     raise PermissionError(
         f"Refusing to write under {root} (original data is read-only). "
-        "Use data/problems/ or data/results/ or data/submissions/ instead."
+        "Use data/problems/, data/submissions/, or data/results/ instead."
     )
