@@ -42,6 +42,13 @@ def upper_confidence_bound(mu, sigma, kappa=2.0):
     -------
     array-like
         UCB value at each point.
+
+    Notes
+    -----
+    When the GP mean μ is nearly constant across candidates (e.g. sparse/flat
+    objective, most observations ~0), UCB ≈ κ σ so argmax(UCB) = argmax(σ).
+    In that regime the chosen point does not depend on κ; kappa only matters
+    when μ varies enough to trade off with σ.
     """
     return mu + kappa * sigma
 

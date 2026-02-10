@@ -60,7 +60,7 @@ black-box-optimization/
 2. **Visualize** — Grid, `min_dist` (distance to nearest observation), IDW y; 2D scatter + contour, 3D surface.
 3. **Suggest next point (Bayesian)** — GP (RBF, Matérn ν=1.5, RBF+WhiteKernel); acquisition (EI, UCB, PI, Thompson, Entropy) × RBF/Matérn; sanity checks (low σ, (0,0) suggestions); baseline: exploit, explore, **high distance** (argmax of `min_dist`).
 4. **Illustrate** — One contour of `min_dist` with all acquisition suggestions + Naive exploit, Random explore, High distance.
-5. **Select next query** — Default: `next_x = next_x_high_dist`. Alternatives: `next_x_explore`, `x_best_EI_RBF`, `next_x_exploit`.
+5. **Select next query** — Default: `next_x = x_best_EI_RBF` (**F1: EI**). Alternatives: `next_x_high_dist`, `x_best_UCB_RBF`, `next_x_exploit`, `next_x_explore`.
 6. **Append new feedback** — After portal returns (x,y), append to `data/problems/function_1/` when IF_APPEND_DATA=True.
 7. **Save suggestion** — When IF_EXPORT_QUERIES=True, write `next_x` to `data/submissions/function_1/` (npy + portal-format txt).
 
@@ -71,7 +71,7 @@ Write safety: `assert_not_under_initial_data(path, project_root)` only forbids w
 ## Planned components (add as you go)
 
 ### `src/optimizers/bayesian/`
-- acquisition_functions.py (in use): UCB, EI, PI, Thompson Sampling, Entropy Search.
+- acquisition_functions.py (in use): UCB, **EI (primary acquisition F1)**, PI, Thompson Sampling, Entropy Search. All notebooks use EI as the default next-query acquisition.
 - Add: GP surrogate, base_optimizer.py when you run BO in code.
 
 ### `src/utils/`

@@ -412,4 +412,13 @@ Action: Review all function inputs; remove spaces around hyphens; ensure every n
 
 ---
 
+---
+
+## This repository
+
+- **Primary acquisition:** All function notebooks in this repo use **Expected Improvement (EI)** as the primary acquisition (F1) for selecting the next query. The "Select next query" cell sets `next_x = x_best_EI_RBF` by default; alternatives (UCB, high-distance, exploit) are documented in each notebook.
+- **Docs:** See also `README.md` (project overview, workflow, structure), `docs/project_roadmap.md` (current structure and roadmap).
+
+---
+
 *Source: Capstone Project FAQs (PDF). For official deadlines, links and submission portals, refer to the course platform and Mini-lessons 12.7 and 12.8.*

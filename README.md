@@ -1,6 +1,6 @@
-# Black-Box Optimization (BBO) Challenge — Stage 2 Capstone
+# Black-Box Optimization (BBO) Challenge
 
-A structured project for the Black-Box Optimization challenge (Stage 2), based on the NeurIPS 2020 BBO competition format. The goal is to explore unknown functions and identify their maxima through a documented, iterative strategy.
+A structured project for the Black-Box Optimization challenge, based on the NeurIPS 2020 BBO competition format. The goal is to explore unknown functions and identify their maxima through a documented, iterative strategy.
 
 **Author:** Nikolas Karefyllidis, PhD
 
@@ -8,37 +8,35 @@ A structured project for the Black-Box Optimization challenge (Stage 2), based o
 
 ## Section 1: Project overview
 
-### What is the BBO capstone and its purpose?
+### What is the BBO capstone?
 
-The BBO (Black-Box Optimization) capstone simulates a setting where we must optimize an **unknown** objective function using only a limited number of expensive evaluations. We are not given the formula or a full picture of the landscape—only initial \((x, y)\) pairs and, after each submission, the single new \(y\) returned by the system for the \(x\) we chose. The purpose is to design and document a **strategy** for choosing the next query at each round, balancing exploration of uncertain regions with exploitation of promising ones.
+We optimize **8 unknown** objective functions with a limited number of expensive evaluations: we get initial (x, y) pairs and, after each submission, the single y returned for the x we chose. The purpose is to design and document a **strategy** for the next query each round—balancing exploration (uncertain regions) and exploitation (promising ones).
 
-### Overall goal and relevance
+### Goal, relevance, and career link
 
-- **Goal:** For each of **8 black-box functions**, find an input vector \(x\) that **maximizes** the output value \(y\). Success is judged on the quality and justification of the process (e.g. choice of surrogate, acquisition, and exploration–exploitation trade-off), not only on hitting a global maximum.
-- **Relevance:** In real-world ML and operations, we often face expensive black-box objectives—hyperparameter tuning, A/B tests, drug discovery, process control—where each evaluation is costly or slow. BBO teaches how to make each query count and how to communicate and defend technical choices.
+- **Goal:** Find input x that **maximizes** y for each function. Success is judged on process quality (surrogate, acquisition, trade-off), not only on finding the global maximum.
+- **Relevance:** Real-world ML often has expensive black-box objectives (hyperparameter tuning, A/B tests, drug discovery); BBO teaches how to make each query count and defend technical choices.
+- **Career:** This project demonstrates decision-making with limited data, clear technical communication, and a reusable optimization pipeline—aligning with goals to deliver evidence-based, portfolio-ready work.
 
-### How this supports my career
+### Background: Bayesian optimization
 
-This project demonstrates the ability to structure an optimization pipeline, implement and compare acquisition functions, and document reasoning in a way that is reusable and portfolio-ready. It supports my current and future work by showing evidence-based decision-making, clear technical communication, and familiarity with Bayesian optimization and related tools (GPs, acquisition functions, space-filling sampling).
+**Bayesian optimization (BO)** is a sample-efficient, sequential method for black-box, expensive objectives under a limited budget. No formula for f(x)—we only evaluate at chosen points. BO uses a **probabilistic surrogate** (here, a Gaussian Process) that gives a **predictive mean** μ(x) (exploitation) and **uncertainty** σ(x) (exploration); an **acquisition function** (e.g. EI, UCB) combines them to pick the next point. Loop: fit surrogate → maximize acquisition → evaluate f(x) → add (x, y) → repeat.
+
+**GPs** define a distribution over functions and provide μ(x) and σ(x) after observing data; uncertainty is lower near observations and higher elsewhere, which acquisition functions use to balance exploration and exploitation. GPs are data-efficient and scale to moderate dimensions (d ≤ 20), matching our 2D–8D functions.
 
 ---
 
 ## Section 2: Inputs and outputs
 
-### What the model receives
+### Inputs (format, dimensionality, constraints)
 
-- **Initial data (per function):** A set of \((x, y)\) pairs in NumPy format:
-  - `initial_inputs.npy`: shape `(n, d)` — \(n\) input points (e.g. 10–40 depending on function), each of dimension \(d\) (2–8).
-  - `initial_outputs.npy`: shape `(n,)` — the corresponding objective values.
-- **Domain:** All inputs lie in \([0, 1]^d\) (or effectively \([0, 0.999999]\) for portal submission).
-- **Query format for submission:** A single vector \(x\) per function, submitted as a string with **exactly six decimal places**, hyphen-separated, no spaces, e.g.  
-  `0.498317-0.625531` (2D) or `0.123456-0.234567-0.345678` (3D).
+- **Initial data:** `initial_inputs.npy` (shape n×d), `initial_outputs.npy` (shape n). Dimension d = 2–8 depending on function (F1–F2: 2D; F3: 3D; F4–F5: 4D; F6: 5D; F7: 6D; F8: 8D).
+- **Domain:** All inputs in [0, 1]^d (portal: [0, 0.999999]).
+- **Submission format:** One vector per function, as a string with **six decimal places**, hyphen-separated, no spaces, e.g. `0.498317-0.625531` (2D), `0.123456-0.234567-0.345678` (3D).
 
-### What the model returns (and what the portal returns)
+### Outputs
 
-- **We submit:** One input \(x\) per function (8 strings per week).
-- **Portal returns:** The **same** inputs we submitted and the **corresponding** \(y\) value for each. We then append these \((x, y)\) pairs to our local dataset for the next round.
-- **Output (objective):** A single real number per query. For all functions, **higher is better** (maximization). For F3 and F6, \(y\) can be negative; in that case e.g. \(-1\) is better than \(-2\).
+- **Portal returns:** The submitted x and the corresponding **y** (one real number per query). We append (x, y) for the next round. **Higher y is better** (maximization); F3 and F6 can be negative (e.g. −1 better than −2).
 
 ### Example
 
@@ -52,62 +50,46 @@ This project demonstrates the ability to structure an optimization pipeline, imp
 
 ## Section 3: Challenge objectives
 
-### Maximization
+**Goal:** **Maximise** y for each of the 8 functions (higher is better; negative y allowed for F3, F6).
 
-- **All 8 functions are maximization problems.** We always prefer a **higher** numerical value of \(y\). If outputs are negative (e.g. F3, F6), \(-1\) is better than \(-2\). Real-world analogies (e.g. “minimize side effects”) are already encoded in the transformed objective we receive.
-
-### Constraints and limitations
-
-- **Limited queries:** One submission per function per week; we must make each query count.
-- **Unknown structure:** We do not see the equation or full surface; we only have initial data and the feedback from our own submissions.
-- **Response delay:** Results arrive after submission; we plan the next round using the updated dataset (initial + all previous feedback).
-- **Dimensions:** Functions 1–2 are 2D; 3 is 3D; 4–5 are 4D; 6 is 5D; 7 is 6D; 8 is 8D. Visualization and candidate sampling scale with dimension (e.g. pairwise plots, space-filling designs).
+**Constraints:** (1) **Query limit** — one submission per function per week. (2) **Unknown structure** — no equation or full surface; only initial data and our own feedback, so we rely on a surrogate and acquisition. (3) **Response delay** — plan next round from updated dataset (initial + all feedback). (4) **Dimensions** — 2D to 8D; visualization and sampling scale with d.
 
 ---
 
 ## Section 4: Technical approach (living record)
 
-*This section is updated as the approach evolves across submission rounds.*
+*Updated as the approach evolves.*
 
-### Methods and modelling
+### Methods
 
-- **Surrogate:** Gaussian Process (GP) regression (e.g. `sklearn.gaussian_process.GaussianProcessRegressor`) with RBF and/or Matérn kernels. Function 1 notebook also compares RBF, Matérn, and RBF+WhiteKernel.
-- **Acquisition functions** (in `src/optimizers/bayesian/acquisition_functions.py`): Expected Improvement (EI), Probability of Improvement (PI), Upper Confidence Bound (UCB), Thompson Sampling, and a simplified Entropy Search proxy. All are used in a **maximize-acquisition** step over a candidate set.
-- **Candidate set:** Instead of optimizing acquisition on a tiny random sample, candidates are generated for **uniform or space-filling coverage** in \([0,1]^d\) via `src/utils/sampling_utils.sample_candidates(n, dim, method='sobol'|'lhs'|'grid'|'random')` (Sobol, LHS, grid, or random). This improves exploration and avoids missing good regions.
-- **Baselines:** “Exploit” (current best point), “Explore” (random candidate), and **“High distance”** (point farthest from existing observations on the same candidate grid)—useful for sparse, peak-like functions (e.g. Function 1).
+- **Surrogate:** GP regression (RBF/Matérn; Function 1 also compares RBF+WhiteKernel). GP gives mean and uncertainty; acquisition uses both to choose the next query.
+- **Acquisition** (`src/optimizers/bayesian/acquisition_functions.py`): **EI** primary; also PI, UCB, Thompson Sampling, Entropy Search. Maximized over a **candidate set** from `sample_candidates(..., method='sobol'|'lhs'|'grid'|'random')` for space-filling coverage in [0,1]^d.
+- **Baselines:** “Exploit” (current best point), “Explore” (random candidate), and **“High distance”** (point farthest from existing observations on the same candidate grid). Default: **EI**.
+- **Other methods:** No **linear/logistic regression**—surface is nonlinear and multimodal. **SVMs** could classify high vs low regions (soft-margin or kernel); GP kept as main surrogate for uncertainty (needed for EI). Possible combo: SVM for regions, GP+EI for exact query.
 
-### Exploration vs exploitation
+### Rounds 1–3 (evolution)
 
-- **EI / PI:** Favour points that are likely to improve over the current best; more exploitation when the GP is confident.
-- **UCB:** Explicit trade-off via \(\kappa\) (e.g. \(\mu + \kappa\sigma\)); higher \(\kappa\) encourages exploration.
-- **Thompson Sampling:** Random draw from the GP posterior; natural exploration through randomness.
-- **High-distance baseline:** Purely exploratory; maximises distance to nearest observation to cover under-sampled regions. Used as default for Function 1 in early rounds when the peak location is still uncertain.
-- Strategy is **per-function**: e.g. more exploration for noisy or multi-peak functions (2, 4), more exploitation once a clear basin is found; high-distance or EI for sparse 2D (1).
+- **Round 1:** Exploration-heavy; ~10 points, high uncertainty. EI/UCB over Sobol/LHS candidates. Default: EI (sometimes UCB with higher κ).
+- **Round 2:** Same method; 11 points after Week 1. Posterior improved; suggestion changed without changing the algorithm. Exploration bonus unchanged (5D–8D still uncertain).
+- **Round 3:** ~12–14 points. More trust in EI over fixed candidates; heuristics (Sobol/grid), default RBF, no GP tuning. EI single criterion; GP uncertainty drives exploration.
 
-### What makes the approach thoughtful
+### Exploration–exploitation
 
-- **Documented choices:** Kernel choice, acquisition choice, and default “next point” (e.g. high-distance vs EI best) are stated and justified in the notebook.
-- **Reproducibility:** Fixed seeds, explicit candidate method (e.g. Sobol), and flags for export/append so that runs are repeatable.
-- **Living record:** Section 4 and the notebooks are updated after each round (e.g. “Week 2: switched default to EI for F1 after feedback”; “F5: UCB with lower \(\kappa\) to exploit”).
+**Trade-off:** Exploration (under-sampled/uncertain regions) vs exploitation (near known good values). **EI** balances them: high where μ(x) > current best (exploit) or σ(x) large (explore). No round-by-round κ tuning. Alternatives: UCB (μ + κσ), PI, Thompson Sampling, high-distance baseline; per-function and documented in notebooks.
+
+**Thoughtful aspects:** Documented kernel/acquisition/default in each notebook; fixed seeds and flags for reproducibility; section and notebooks updated each round.
 
 ---
 
 ## Key deliverables
 
-1. A fully documented algorithm and model.
-2. A portfolio-ready artifact suitable for strengthening your CV and career profile.
-
-Submission materials live in `submission-template/` (data sheet, model card, README).
+Fully documented algorithm and model; portfolio-ready artifact (CV/profile). Submission materials: `submission-template/` (data sheet, model card, README).
 
 ---
 
 ## Challenge overview (reference)
 
-- 8 black-box functions: You do not see their equations or full visualizations.
-- Simulation: Each function represents a high-stakes task (e.g. tuning a radiation detector, controlling a robot) where data is expensive or slow to obtain.
-- Constraint: A limited number of queries per week; strategy matters.
-- Warm start: 10 \((x, y)\) pairs per function are provided as initial data.
-- Data format: NumPy `.npy` files. Each function has a folder `initial_data/function_N/` with `initial_inputs.npy` (shape n×d) and `initial_outputs.npy` (shape n). Load via `src.utils.load_challenge_data.load_function_data(N)` (read-only).
+8 black-box functions (no equations or full surface); one query per function per week; warm start: initial (x, y) pairs in `initial_data/function_N/` (`initial_inputs.npy`, `initial_outputs.npy`). Load via `load_function_data(N)` (read-only).
 
 ### The 8 functions (brief)
 
@@ -124,11 +106,7 @@ Submission materials live in `submission-template/` (data sheet, model card, REA
 
 ## Weekly workflow
 
-1. Review: Download and analyze your current dataset (all previous queries and results).
-2. Choose: Run your optimizer (or manual process) to select the single best next input \(x\) for each of the 8 functions.
-3. Submit: Upload these \(x\) values to the capstone project portal.
-4. Receive: The system returns the corresponding \(y\) values.
-5. Reflect and update: Add the new points to your set and reflect—did the strategy work? Too explorative or too exploitative? How to adjust acquisition or model for the next round?
+Review dataset → run optimizer → submit 8 x values to portal → receive y → append (x, y) and reflect (strategy, exploration vs exploitation) → repeat.
 
 ## Project structure (in use)
 
@@ -154,7 +132,7 @@ black-box-optimization/
 │
 ├── notebooks/
 │   ├── function_1_Radiation-Detection.ipynb   # Function 1 (2D): full options — 3 GP kernels, all acquisitions; use as reference
-│   ├── funtion_2_Mystery-ML-Model.ipynb       # Function 2 (2D): simplified (RBF, EI+PI+UCB)
+│   ├── function_2_Mystery-ML-Model.ipynb       # Function 2 (2D): simplified (RBF, EI+PI+UCB)
 │   ├── function_3_Drug-Discovery.ipynb        # Function 3 (3D): minimization→maximization, 2D pairwise + 3D scatter
 │   ├── function_4_Warehouse-Logistics.ipynb  # Function 4 (4D): 6 pairwise 2D plots, GP slices, acquisition
 │   ├── function_5_Chemical-Process-Yield.ipynb   # Function 5 (4D): same workflow as function_4
@@ -179,7 +157,7 @@ black-box-optimization/
 └── README.md
 ```
 
-**Notebooks:** One notebook per function (1–8). **Function 1** has the most options (three GP kernels, all acquisition functions, baselines); use it as reference if you need more than RBF+EI/PI/UCB. Function 2 is simplified (RBF, EI+PI+UCB). Functions 3–8 use the same Bayesian optimisation workflow with dimension-specific pairwise plots and GP slices (3D→3 pairs, 4D→6, 5D→10, 6D→15, 8D→28).
+**Notebooks:** One notebook per function (1–8). All notebooks use **F1: EI (Expected Improvement)** as the primary acquisition for the next query; section **5. Select next query** sets `next_x = x_best_EI_RBF` by default. **Function 1** has the most options (three GP kernels, all acquisition functions, baselines); use it as reference if you need more than RBF+EI. Functions 2–8 use the same Bayesian optimisation workflow with dimension-specific pairwise plots and GP slices (3D→3 pairs, 4D→6, 5D→10, 6D→15, 8D→28).
 
 Further planned components (GP surrogate, extra notebooks, etc.) are in `docs/project_roadmap.md`.
 
@@ -196,7 +174,7 @@ Further planned components (GP surrogate, extra notebooks, etc.) are in `docs/pr
 
 - Random Search (including non-uniform distributions).
 - Grid Search (limited by dimensionality).
-- **Bayesian Optimization** (GP surrogate + acquisition). This repo includes acquisition functions in `src/optimizers/bayesian/acquisition_functions.py`: UCB, Expected Improvement (EI), Probability of Improvement (PI), Thompson Sampling, Entropy Search (simplified proxy). References are in the module docstring. For maximising acquisition over the input space, candidate points can be generated with **uniform coverage** via `src/utils/sampling_utils.py`: `sample_candidates(n, dim, method='grid'|'lhs'|'sobol'|'random')` — e.g. `'grid'` for a regular lattice, `'lhs'` or `'sobol'` for space-filling.
+- **Bayesian Optimization** (GP surrogate + acquisition). This repo includes acquisition functions in `src/optimizers/bayesian/acquisition_functions.py`: **EI (primary, F1)**, UCB, PI, Thompson Sampling, Entropy Search (simplified proxy). References are in the module docstring. For maximising acquisition over the input space, candidate points can be generated with **uniform coverage** via `src/utils/sampling_utils.py`: `sample_candidates(n, dim, method='grid'|'lhs'|'sobol'|'random')` — e.g. `'grid'` for a regular lattice, `'lhs'` or `'sobol'` for space-filling.
 - Manual reasoning (e.g. plotting and guessing in 2D).
 - Custom surrogates (e.g. Random Forests, Gradient Boosted Trees instead of GPs).
 
@@ -216,7 +194,7 @@ You are not required to build a submission optimizer from scratch or to find the
    - **2. Visualize** — Grid, distance to nearest observation, 2D contour + 3D surface.  
    - **3. Suggest next point (Bayesian)** — GP surrogates (RBF, Matérn, RBF+WhiteKernel); acquisition (EI, UCB, PI, Thompson, Entropy) with RBF/Matérn, maximised over **uniform-coverage candidates** (`sample_candidates(..., method='grid')` by default; set `CANDIDATE_SAMPLING_METHOD` to `'lhs'`, `'sobol'`, or `'random'` to compare); sanity checks for (0,0) and low σ; baseline (exploit, explore, **high distance** = point farthest from observations on the same candidate set).  
    - **4. Illustrate** — Single plot: all acquisition suggestions + Naive exploit, Random explore, High distance on distance contour.  
-   - **5. Select next query** — Default: `next_x = next_x_high_dist` (high distance). Alternatives: `next_x_explore`, `x_best_EI_RBF`, `next_x_exploit`.  
+   - **5. Select next query** — Default: `next_x = x_best_EI_RBF` (**F1: EI**). Alternatives: `next_x_high_dist`, `x_best_UCB_RBF`, `next_x_exploit`, `next_x_explore`.  
    - **6. Append new feedback** — After portal returns \((x,y)\), run with `IF_APPEND_DATA = True` to append to `data/problems/function_1/`.  
    - **7. Save suggestion** — With `IF_EXPORT_QUERIES = True`, write `next_x` to `data/submissions/function_1/` (npy + portal-format txt).  
    After you receive the new \(y\), run section 6 (Append) then re-run the notebook for the next round.
@@ -230,6 +208,12 @@ You are not required to build a submission optimizer from scratch or to find the
    This prints a **submission summary**: full portal strings (copy-paste per function) and where files live. Options:
    - `python run_all.py --execute-notebooks` — run all 8 function notebooks (writes `data/submissions/function_N/`; needs `nbconvert`).
    - `python run_all.py --skip-scripts` — skip running any scripts in `scripts/` (if present); only show the summary.
+
+## Documentation
+
+- **README.md** (this file): Project overview, inputs/outputs, technical approach, structure, getting started.
+- **docs/project_roadmap.md**: Current project structure, function notebook workflow, planned components.
+- **docs/Capstone_Project_FAQs.md**: Capstone FAQs (data, submission, method); includes a short note on this repo’s use of EI as F1.
 
 ## References
 

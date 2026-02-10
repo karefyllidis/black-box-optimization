@@ -28,7 +28,7 @@ def execute_notebooks():
         return
     nb_dir = ROOT / "notebooks"
     for i in range(1, 9):
-        nbs = list(nb_dir.glob(f"function_{i}_*.ipynb")) or (list(nb_dir.glob("funtion_2_*.ipynb")) if i == 2 else [])
+        nbs = list(nb_dir.glob(f"function_{i}_*.ipynb"))
         if not nbs:
             yield f"function_{i}", False, "not found"
             continue
