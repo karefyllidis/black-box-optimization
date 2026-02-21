@@ -37,6 +37,10 @@ venv.bak/
 # VS Code
 .vscode/
 
+# Cursor index (large, can cause slowness when opening project)
+.git/cursor/
+.cursorignore
+
 # pyenv
 .python-version
 
