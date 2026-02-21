@@ -161,15 +161,6 @@ black-box-optimization/
 
 Further planned components (GP surrogate, extra notebooks, etc.) are in `docs/project_roadmap.md`.
 
-### Write safety (avoid overwriting)
-
-- **Never written to (read-only):** `initial_data/` — challenge data. The loader and notebooks only read from here. `assert_not_under_initial_data()` (in `src/utils/load_challenge_data.py`) blocks any write path under `initial_data/`; paths under `data/problems/`, `data/submissions/`, and `data/results/` are allowed.
-- **Written only when you enable a flag** (in `notebooks/function_1_Radiation-Detection.ipynb`):
-  - **Plots** (only if `IF_EXPORT_PLOT = True`): `data/results/function_1_observations_and_distance_contour.png`, `data/results/function_1_3d_surface_distance_colour.png`, etc. Directory and format/DPI come from `PLOT_EXPORT_DIR` (default `repo_root / "data" / "results"`), `DEFAULT_EXPORT_FORMAT`, `DEFAULT_EXPORT_DPI` (see `src/utils/plot_utilities.py`).
-  - **Submissions** (only if `IF_EXPORT_QUERIES = True`): `data/submissions/function_1/next_input.npy`, `next_input_portal.txt` (portal format: 6 decimals, hyphens, no spaces).
-  - **Appended data** (only if `IF_APPEND_DATA = True`): `data/problems/function_1/observations.csv` — your local copy (initial + appended points). Under `data/` we operate only with CSV; no `.npy` in `data/problems/`. Run the append cell after you receive new \((x,y)\) from the portal.
-- **Default:** All flags are `False`; running the notebook then writes no files. Turn only the flags you need to `True` for that run.
-
 ## Allowed techniques
 
 - Random Search (including non-uniform distributions).
