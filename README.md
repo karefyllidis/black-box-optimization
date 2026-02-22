@@ -142,7 +142,7 @@ black-box-optimization/
 │
 ├── run_all.py                  # Print submission summary; optional: --execute-notebooks, --skip-scripts
 ├── configs/
-│   └── problems/                  # (optional) problem configs; see docs_private/private_notes.md
+│   └── problems/                  # (optional) problem configs; see docs_private/project_log.md
 │
 ├── tests/
 │   ├── test_optimizers/
@@ -196,7 +196,7 @@ You are not required to build a submission optimizer from scratch or to find the
    ```bash
    python run_all.py
    ```
-   This prints a **submission summary**: full portal strings (copy-paste per function) and where files live. Options:
+   By default this runs any scripts in `scripts/` (e.g. `append_week1_results.py`, `append_week2_results.py`, `append_week3_results.py` to append portal feedback to `data/problems/function_N/observations.csv`), then prints a **submission summary**: full portal strings (copy-paste per function) and where files live. Options:
    - `python run_all.py --execute-notebooks` — run all 8 function notebooks (writes `data/submissions/function_N/`; needs `nbconvert`).
    - `python run_all.py --skip-scripts` — skip running any scripts in `scripts/` (if present); only show the summary.
 
