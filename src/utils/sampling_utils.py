@@ -12,7 +12,7 @@ coverage than plain random uniform. Methods:
 from __future__ import annotations
 
 import numpy as np
-
+import matplotlib.pyplot as plt
 
 def sample_candidates(
     n: int,
@@ -96,3 +96,42 @@ def sample_candidates_legacy(
     Use sample_candidates(..., method='lhs') or method='sobol' for uniform coverage.
     """
     return sample_candidates(n, dim, method="random", seed=seed)
+
+
+if __name__ == "__main__":
+    n, dim, seed = 150, 2, 42
+    methods = ("random", "lhs", "sobol", "grid")
+    colors = ("black", "red", "blue", "magenta")
+    markers = ("o", "o", "o", "o")
+
+    # Sample once per method
+    pts_by_method = {m: sample_candidates(n, dim, method=m, seed=seed) for m in methods}
+
+    # Figure 1: all methods overlaid
+    fig1, ax1 = plt.subplots(figsize=(6, 6))
+    for method, color, marker in zip(methods, colors, markers):
+        pts = pts_by_method[method]
+        ax1.scatter(pts[:, 0], pts[:, 1], c=color, alpha=0.6, s=25, label=method, marker=marker)
+    ax1.set_xlim(0, 1)
+    ax1.set_ylim(0, 1)
+    ax1.legend(loc="lower center", bbox_to_anchor=(0.5, -0.25), fontsize=10, frameon=True, framealpha=0.8, ncol=4, title="Sampling Method")
+    ax1.set_xlabel("x", fontsize=10)
+    ax1.set_ylabel("y", fontsize=10)
+    ax1.grid(True, alpha=0.3, linestyle="--")
+    ax1.set_title(f"2D sampling comparison — all methods (n={n})", fontsize=12, fontweight="bold")
+    ax1.set_aspect("equal")
+    plt.tight_layout()
+
+    # Figure 2: 2x2 grid, one per method
+    fig2, axes = plt.subplots(2, 2, figsize=(8, 8), sharex=True, sharey=True)
+    for ax, method, color in zip(axes.ravel(), methods, colors):
+        pts = pts_by_method[method]
+        ax.scatter(pts[:, 0], pts[:, 1], c=color, alpha=0.7, s=20)
+        ax.set_title(method, fontsize=11)
+        ax.set_xlim(0, 1)
+        ax.set_ylim(0, 1)
+        ax.grid(True, alpha=0.3, linestyle="--")
+        ax.set_aspect("equal")
+    plt.suptitle(f"2D sampling comparison — 2×2 per method (n={n})", fontsize=12, fontweight="bold")
+    plt.tight_layout()
+    plt.show()
