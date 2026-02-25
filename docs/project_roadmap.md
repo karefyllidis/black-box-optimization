@@ -9,8 +9,6 @@ black-box-optimization/
 ├── initial_data/                 # Raw challenge data (DO NOT MODIFY)
 │   ├── function_1/ … function_8/
 │
-├── phase_a_training/             # Stage 1 (reference only)
-│
 ├── src/
 │   ├── optimizers/
 │   │   └── bayesian/             # acquisition_functions.py (UCB, EI, PI, Thompson, Entropy Search)
@@ -40,7 +38,13 @@ black-box-optimization/
 │   ├── Capstone_Project_FAQs.md
 │   └── …
 │
-├── docs_private/                 # Private notes (gitignored); you moved notes here
+├── docs_private/                 # Private notes (contents gitignored except below)
+│   ├── notebooks/
+│   │   └── function_0_devel.ipynb   # 1D tutorial (tracked): GP kernels, skopt acquisition, ensemble EI+PI+UCB, true max
+│   ├── phase_a_training/            # Stage 1 (archived; no longer relevant)
+│   ├── ENSEMBLE_ACQUISITION_GUIDE.md
+│   ├── TODO.md
+│   └── ...                        # Rest gitignored via docs_private/*
 │
 ├── requirements.txt
 ├── .gitignore
@@ -56,7 +60,7 @@ black-box-optimization/
 
 ## Function 1 notebook workflow (in use)
 
-1. **Setup and load data** — Imports (GP, acquisition_functions, plot_utilities), repo root, load from local or `initial_data`, flags (IF_EXPORT_PLOT, IF_EXPORT_QUERIES, IF_APPEND_DATA).
+1. **Setup and load data** — Imports (GP, skopt acquisition, plot_utilities), repo root, load from local or `initial_data`, flags (IF_EXPORT_PLOT, IF_EXPORT_QUERIES, IF_APPEND_DATA).
 2. **Visualize** — Grid, `min_dist` (distance to nearest observation), IDW y; 2D scatter + contour, 3D surface.
 3. **Suggest next point (Bayesian)** — GP (RBF, Matérn ν=1.5, RBF+WhiteKernel); acquisition (EI, UCB, PI, Thompson, Entropy) × RBF/Matérn; sanity checks (low σ, (0,0) suggestions); baseline: exploit, explore, **high distance** (argmax of `min_dist`).
 4. **Illustrate** — One contour of `min_dist` with all acquisition suggestions + Naive exploit, Random explore, High distance.
@@ -71,7 +75,7 @@ Write safety: `assert_not_under_initial_data(path, project_root)` only forbids w
 ## Planned components (add as you go)
 
 ### `src/optimizers/bayesian/`
-- acquisition_functions.py (in use): UCB, **EI (primary acquisition F1)**, PI, Thompson Sampling, Entropy Search. All notebooks use EI as the default next-query acquisition.
+- acquisition_functions.py (in use): UCB, EI, PI, Thompson Sampling, Entropy Search. Alternative to skopt; notebooks F1–F3 and function_0_devel use **skopt** (gaussian_ei, gaussian_pi, gaussian_lcb) for acquisition. EI remains the default next-query criterion.
 - Add: GP surrogate, base_optimizer.py when you run BO in code.
 
 ### `src/utils/`
@@ -85,5 +89,6 @@ Write safety: `assert_not_under_initial_data(path, project_root)` only forbids w
 ### `tests/`
 - test_optimizers/, test_utils/: add tests when you add code.
 
-### `docs/`
-- project_roadmap.md, Capstone_Project_FAQs.md. Add learning_log.md, algorithms_summary.md, etc. as needed.
+### `docs/` and `docs_private/`
+- project_roadmap.md, Capstone_Project_FAQs.md. Add learning_log.md, algorithms_summary.md as needed.
+- docs_private/: ENSEMBLE_ACQUISITION_GUIDE.md, TODO.md. function_0_devel.ipynb is tracked (gitignore exception).

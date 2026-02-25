@@ -41,6 +41,7 @@ venv.bak/
 .git/cursor/
 .cursorignore
 
+
 # pyenv
 .python-version
 
@@ -137,10 +138,12 @@ Desktop.ini
 
 # Project folders
 submission-template/
-phase_a_training/docs/
 
-# Private documentation (you moved private notes here or elsewhere)
-docs_private/
+# Private documentation (ignored except function_0_devel)
+docs_private/*
+!docs_private/notebooks/
+docs_private/notebooks/*
+!docs_private/notebooks/function_0_devel.ipynb
 
 # Raw data folders
 initial_data/

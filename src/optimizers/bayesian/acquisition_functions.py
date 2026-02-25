@@ -1,6 +1,12 @@
 """
 Acquisition functions for Bayesian optimization.
 
+These functions operate on (mu, sigma, y_best) and can be used when you have
+GP predictions directly. For notebook workflows, many use scikit-optimize
+(skopt) instead: ``gaussian_ei``, ``gaussian_pi``, ``gaussian_lcb`` from
+``skopt.acquisition``, which take a fitted GP and candidate points. Skopt
+assumes minimization; for maximization fit a GP on -y and use y_opt=-y_best.
+
 References
 ----------
 .. [1] Srinivas, N., Krause, A., Kakade, S. M., & Seeger, M. (2010). Gaussian process

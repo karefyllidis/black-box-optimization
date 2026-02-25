@@ -63,7 +63,7 @@ We optimize **8 unknown** objective functions with a limited number of expensive
 ### Methods
 
 - **Surrogate:** GP regression (RBF/Matérn; Function 1 also compares RBF+WhiteKernel). GP gives mean and uncertainty; acquisition uses both to choose the next query.
-- **Acquisition** (`src/optimizers/bayesian/acquisition_functions.py`): **EI** primary; also PI, UCB, Thompson Sampling, Entropy Search. Maximized over a **candidate set** from `sample_candidates(..., method='sobol'|'lhs'|'grid'|'random')` for space-filling coverage in [0,1]^d.
+- **Acquisition:** Notebooks use **scikit-optimize (skopt)** `gaussian_ei`, `gaussian_pi`, `gaussian_lcb` (F1–F3, `function_0_devel`). An alternative implementation lives in `src/optimizers/bayesian/acquisition_functions.py` (EI, PI, UCB, Thompson Sampling, Entropy Search). Acquisition is maximised over a **candidate set** from `sample_candidates(..., method='sobol'|'lhs'|'grid'|'random')` for space-filling coverage in [0,1]^d. **Ensemble acquisition** (EI+PI+UCB; agree → EI, disagree → centroid) is implemented in `function_0_devel`; see `docs_private/ENSEMBLE_ACQUISITION_GUIDE.md`.
 - **Baselines:** “Exploit” (current best point), “Explore” (random candidate), and **“High distance”** (point farthest from existing observations on the same candidate grid). Default: **EI**.
 - **Other methods:** No **linear/logistic regression**—surface is nonlinear and multimodal. **SVMs** could classify high vs low regions (soft-margin or kernel); GP kept as main surrogate for uncertainty (needed for EI). Possible combo: SVM for regions, GP+EI for exact query.
 
@@ -115,8 +115,6 @@ black-box-optimization/
 ├── initial_data/                 # Raw challenge data (DO NOT MODIFY)
 │   ├── function_1/ … function_8/   # initial_inputs.npy, initial_outputs.npy each
 │
-├── phase_a_training/             # Stage 1 (reference only)
-│
 ├── src/
 │   ├── optimizers/
 │   │   └── bayesian/              # acquisition_functions.py (UCB, EI, PI, Thompson Sampling, Entropy Search)
@@ -152,12 +150,19 @@ black-box-optimization/
 │   ├── project_roadmap.md        # Current structure and planned components
 │   └── Capstone_Project_FAQs.md
 │
+├── docs_private/                 # Private notes (mostly gitignored)
+│   ├── notebooks/
+│   │   └── function_0_devel.ipynb   # 1D tutorial (tracked): GP kernels, skopt acquisition, ensemble EI+PI+UCB
+│   ├── phase_a_training/            # Stage 1 (archived; no longer relevant)
+│   ├── ENSEMBLE_ACQUISITION_GUIDE.md
+│   └── TODO.md
+│
 ├── submission-template/          # Data sheet, model card, README for portfolio
 ├── requirements.txt
 └── README.md
 ```
 
-**Notebooks:** One notebook per function (1–8). All notebooks use **F1: EI (Expected Improvement)** as the primary acquisition for the next query; section **5. Select next query** sets `next_x = x_best_EI_RBF` by default. **Function 1** has the most options (three GP kernels, all acquisition functions, baselines); use it as reference if you need more than RBF+EI. Functions 2–8 use the same Bayesian optimisation workflow with dimension-specific pairwise plots and GP slices (3D→3 pairs, 4D→6, 5D→10, 6D→15, 8D→28).
+**Notebooks:** One notebook per function (1–8). All notebooks use **EI (Expected Improvement)** as the primary acquisition; section **5. Select next query** sets `next_x = x_best_EI_RBF` by default. **Function 1** has the most options (three GP kernels, all acquisition functions, baselines). **function_0_devel** (`docs_private/notebooks/`) is a 1D tutorial: GP kernel effects, skopt acquisition, ensemble EI+PI+UCB (with/without comparison), true maximum marker. Candidate sampling: Sobol or LHS for space-filling; see `sample_candidates(..., method='sobol'|'lhs'|'grid'|'random')`.
 
 Further planned components (GP surrogate, extra notebooks, etc.) are in `docs/project_roadmap.md`.
 
@@ -165,7 +170,7 @@ Further planned components (GP surrogate, extra notebooks, etc.) are in `docs/pr
 
 - Random Search (including non-uniform distributions).
 - Grid Search (limited by dimensionality).
-- **Bayesian Optimization** (GP surrogate + acquisition). This repo includes acquisition functions in `src/optimizers/bayesian/acquisition_functions.py`: **EI (primary, F1)**, UCB, PI, Thompson Sampling, Entropy Search (simplified proxy). References are in the module docstring. For maximising acquisition over the input space, candidate points can be generated with **uniform coverage** via `src/utils/sampling_utils.py`: `sample_candidates(n, dim, method='grid'|'lhs'|'sobol'|'random')` — e.g. `'grid'` for a regular lattice, `'lhs'` or `'sobol'` for space-filling.
+- **Bayesian Optimization** (GP surrogate + acquisition). Notebooks use **skopt** (`gaussian_ei`, `gaussian_pi`, `gaussian_lcb`); alternative: `src/optimizers/bayesian/acquisition_functions.py` (EI, UCB, PI, Thompson Sampling, Entropy Search). Candidate points: `sample_candidates(n, dim, method='sobol'|'lhs'|'grid'|'random')` — Sobol or LHS for space-filling, grid for regular lattice.
 - Manual reasoning (e.g. plotting and guessing in 2D).
 - Custom surrogates (e.g. Random Forests, Gradient Boosted Trees instead of GPs).
 
@@ -190,7 +195,7 @@ You are not required to build a submission optimizer from scratch or to find the
    - **7. Save suggestion** — With `IF_EXPORT_QUERIES = True`, write `next_x` to `data/submissions/function_1/` (npy + portal-format txt).  
    After you receive the new \(y\), run section 6 (Append) then re-run the notebook for the next round.
 
-4. Acquisition functions live in `src/optimizers/bayesian/acquisition_functions.py`; import via `from src.optimizers.bayesian.acquisition_functions import expected_improvement, upper_confidence_bound, ...`. Plot styling: `src/utils/plot_utilities.py` (`style_axis`, `add_colorbar`, `DEFAULT_FONT_SIZE_AXIS`, etc.). For more structure and planned components, see `docs/project_roadmap.md`. Complete the submission using the templates in `submission-template/`.
+4. **Acquisition:** Notebooks use `skopt.acquisition` (`gaussian_ei`, `gaussian_pi`, `gaussian_lcb`). Alternative: `src/optimizers/bayesian/acquisition_functions.py`. Plot styling: `src/utils/plot_utilities.py` (`style_axis`, `add_colorbar`, `DEFAULT_FONT_SIZE_AXIS`). For structure and planned components, see `docs/project_roadmap.md`. **Tutorial:** `docs_private/notebooks/function_0_devel.ipynb` (1D GP kernels, skopt acquisition, ensemble). Complete the submission using the templates in `submission-template/`.
 
 5. **Submission summary** — From the project root, run:
    ```bash
@@ -202,9 +207,16 @@ You are not required to build a submission optimizer from scratch or to find the
 
 ## Documentation
 
-- **README.md** (this file): Project overview, inputs/outputs, technical approach, structure, getting started.
-- **docs/project_roadmap.md**: Current project structure, function notebook workflow, planned components.
-- **docs/Capstone_Project_FAQs.md**: Capstone FAQs (data, submission, method); includes a short note on this repo’s use of EI as F1.
+| File | Purpose |
+|------|---------|
+| **README.md** (this file) | Project overview, inputs/outputs, technical approach, structure, getting started |
+| **docs/project_roadmap.md** | Current structure, notebook workflow, planned components |
+| **docs/Capstone_Project_FAQs.md** | Capstone FAQs: data, submission, method |
+| **docs_private/ENSEMBLE_ACQUISITION_GUIDE.md** | Ensemble EI+PI+UCB: agree/disagree logic, skopt usage |
+| **docs_private/TODO.md** | Near-term tasks and status |
+| **docs_private/notebooks/function_0_devel.ipynb** | 1D tutorial (tracked); GP kernels, skopt, ensemble |
+
+*Note:* `docs_private/` is mostly gitignored; `function_0_devel.ipynb` is an exception (tracked).
 
 ## References
 
