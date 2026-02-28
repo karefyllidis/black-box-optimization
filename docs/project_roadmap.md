@@ -23,13 +23,17 @@ black-box-optimization/
 │   (data/results/)               # Exported plots (observations+contour, 3D surface, GP kernels, all acquisition points)
 │
 ├── notebooks/
-│   ├── function_1_Radiation-Detection.ipynb  # F1 (2D): full options — 3 kernels, all acquisitions, baselines
-│   ├── function_2_Mystery-ML-Model.ipynb     # F2 (2D): d=2 reference — 3 kernels, ensemble, configurable bounds
-│   ├── function_3_Drug-Discovery.ipynb       # F3 (3D): d≥3 reference — 2D pairwise, GP slices, ensemble
-│   ├── function_4 … function_8              # Adapt from F2 (d=2) or F3 (d≥3) template
+│   ├── function_1_Radiation-Detection.ipynb      # F1 (2D): full options — 3 kernels, all acquisitions, baselines
+│   ├── function_2_Mystery-ML-Model.ipynb         # F2 (2D): d=2 template — 3 kernels, ensemble, configurable bounds
+│   ├── function_3_Drug-Discovery.ipynb           # F3 (3D): d≥3 baseline — pairwise projections, GP slices, ensemble
+│   ├── function_4_Warehouse-Logistics.ipynb      # F4 (4D): 6 pairwise plots, per-row colorbars, coarser viz / finer acq
+│   ├── function_5_Chemical-Process-Yield.ipynb   # F5 (4D): 6 pairwise plots, same workflow as F4
+│   ├── function_6_Recipe-Optimization.ipynb      # F6 (5D): 10 pairwise plots, per-row colorbars
+│   ├── function_7_Hyperparameter-Tuning.ipynb    # F7 (6D): 15 pairwise plots, per-row colorbars
+│   └── function_8_High-dimensional-ML-Model.ipynb # F8 (8D): 28 pairwise plots, per-row colorbars
 │
 ├── run_all.py                   # Submission summary (portal strings); --execute-notebooks runs all 8 notebooks
-├── scripts/                     # Optional; if present, run_all.py runs *.py here before summary
+├── scripts/                     # append_week{1..4}_results.py — portal feedback → observations.csv
 ├── configs/
 │   └── problems/                 # (removed for now; see docs_private/private_notes.md)
 │
@@ -45,9 +49,11 @@ black-box-optimization/
 ├── docs_private/                 # Private notes (contents gitignored except below)
 │   ├── notebooks/
 │   │   └── function_0_devel.ipynb   # 1D tutorial (tracked): GP kernels, skopt acquisition, ensemble EI+PI+UCB, true max
-│   ├── phase_a_training/            # Stage 1 (archived; no longer relevant)
-│   ├── ENSEMBLE_ACQUISITION_GUIDE.md
+│   ├── FUNCTION_NOTEBOOK_ADAPTATION_GUIDE.md  # Complete adaptation guide: templates, checklists, styling patterns
+│   ├── ENSEMBLE_ACQUISITION_GUIDE.md          # Ensemble EI+PI+UCB logic
+│   ├── project_log.md              # Weekly evolution, assumptions, reflections
 │   ├── TODO.md
+│   ├── phase_a_training/            # Stage 1 (archived; no longer relevant)
 │   └── ...                        # Rest gitignored via docs_private/*
 │
 ├── requirements.txt
@@ -62,17 +68,17 @@ black-box-optimization/
 - `notebooks/weekly_review/` — weekly notes
 - `src/objective/`, `src/experiments/` — see private notes (e.g. in docs_private/)
 
-## Notebook workflow (F2/F3 template — in use)
+## Notebook workflow (F2/F4 template — all notebooks adapted)
 
 1. **Setup and load data** — Imports (GP, skopt acquisition/sampler), repo root, load from local CSV or `initial_data`, flags.
-2. **Parameters** — Kernel choice (`GP_KERNEL = "auto"` or manual), `OPTIMIZE_KERNEL`, kernel bounds (constant scale, length scale, white noise), acquisition coefficients (`XI_EI_PI`, `KAPPA_UCB`), candidate sampling, ensemble vs solo mode.
-3. **Visualize** — Observations scatter, IDW contour, convergence plot. d=2: 2D contour + 3D surface. d≥3: 2D pairwise projections + IDW.
-4. **GP surrogate** — Fit 3 kernels (RBF, Matérn, RBF+WhiteKernel) with configurable bounds; select best by LML. 3×2 grid (mean + std). d≥3: 2D slices at median.
-5. **Acquisition** — EI/PI/UCB computed for all kernels via `skopt.acquisition`; ensemble logic (agree → EI argmax, disagree → centroid) or solo. Baselines: exploit + explore (no high-distance in F2/F3+).
-6. **Select & illustrate** — Final plot: d=2: 1×2 (mean + std); d≥3: 3×2 GP slices with acquisition markers.
+2. **Parameters** — Kernel choice (`GP_KERNEL = None` → LML auto-select, or manual), `OPTIMIZE_KERNEL`, kernel bounds (constant scale, length scale, white noise `(1e-12, 1e1)`), acquisition coefficients (`XI_EI_PI`, `KAPPA_UCB`), candidate sampling (`n_cand` as power of 2), ensemble vs solo mode (`SOLO_STRATEGY`).
+3. **Visualize** — Observations scatter, IDW contour, convergence plot. d=2: 2D contour + 3D surface. d≥3: 2D pairwise projections + IDW with per-row colorbars; uses coarser `n_grid_viz` for fast rendering.
+4. **GP surrogate** — Fit 3 kernels (RBF, Matérn, RBF+WhiteKernel) with configurable bounds; select best by LML. 3×2 grid (mean + std). d≥3: 2D slices at median of held-out dimensions.
+5. **Acquisition** — EI/PI/UCB computed for all kernels via `skopt.acquisition` on `n_cand` Sobol/LHS candidates; ensemble logic (agree → EI argmax, disagree → centroid) or solo. Baselines: exploit + explore (no high-distance in F2–F8).
+6. **Select & illustrate** — Final plot: d=2: 1×2 (mean + std); d≥3: pairwise GP slices with acquisition markers; `tight_layout(rect=[0,0,1,0.96])` + `suptitle(..., y=0.98)` avoids title overlap.
 7. **Export** — Append new observation (§6) and/or save next_x (§7).
 
-**F1** retains the original full-options layout (all acquisition functions, high-distance baseline, Thompson/Entropy).
+**F1** retains the original full-options layout (all acquisition functions, high-distance baseline, Thompson/Entropy). All F3–F8 notebooks are fully adapted with dimension-specific pair counts, per-row colorbars, and optimised rendering.
 
 For step-by-step adaptation checklists, see `docs_private/FUNCTION_NOTEBOOK_ADAPTATION_GUIDE.md`.
 
@@ -83,7 +89,7 @@ Write safety: `assert_not_under_initial_data(path, project_root)` only forbids w
 ## Planned components (add as you go)
 
 ### `src/optimizers/bayesian/`
-- acquisition_functions.py (in use): UCB, EI, PI, Thompson Sampling, Entropy Search. Alternative to skopt; notebooks F1–F3 and function_0_devel use **skopt** (gaussian_ei, gaussian_pi, gaussian_lcb) for acquisition. EI remains the default next-query criterion.
+- acquisition_functions.py (in use): UCB, EI, PI, Thompson Sampling, Entropy Search. Alternative to skopt; all notebooks (F1–F8) and function_0_devel use **skopt** (gaussian_ei, gaussian_pi, gaussian_lcb) for acquisition. Default next-query criterion configurable via `SOLO_STRATEGY`.
 - Add: GP surrogate, base_optimizer.py when you run BO in code.
 
 ### `src/utils/`
@@ -98,5 +104,5 @@ Write safety: `assert_not_under_initial_data(path, project_root)` only forbids w
 - test_optimizers/, test_utils/: add tests when you add code.
 
 ### `docs/` and `docs_private/`
-- project_roadmap.md, Capstone_Project_FAQs.md. Add learning_log.md, algorithms_summary.md as needed.
-- docs_private/: ENSEMBLE_ACQUISITION_GUIDE.md, FUNCTION_NOTEBOOK_ADAPTATION_GUIDE.md, TODO.md. function_0_devel.ipynb is tracked (gitignore exception).
+- project_roadmap.md (this file), Capstone_Project_FAQs.md. Add learning_log.md, algorithms_summary.md as needed.
+- docs_private/: FUNCTION_NOTEBOOK_ADAPTATION_GUIDE.md (complete adaptation guide with checklists, styling patterns, dimension reference), ENSEMBLE_ACQUISITION_GUIDE.md, project_log.md (weekly evolution), TODO.md, README_PRIVATE.md. function_0_devel.ipynb is tracked (gitignore exception).
