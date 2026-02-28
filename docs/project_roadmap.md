@@ -14,7 +14,8 @@ black-box-optimization/
 │   │   └── bayesian/             # acquisition_functions.py (UCB, EI, PI, Thompson, Entropy Search)
 │   └── utils/
 │       ├── load_challenge_data.py # load_function_data(N), assert_not_under_initial_data (blocks writes under initial_data only)
-│       └── plot_utilities.py     # style_axis, add_colorbar, style_legend; DEFAULT_FONT_SIZE_*, DEFAULT_EXPORT_*
+│       ├── plot_utilities.py     # style_axis, add_colorbar, style_legend; DEFAULT_FONT_SIZE_*, DEFAULT_EXPORT_*
+│       └── sampling_utils.py    # sample_candidates() wrapper (F1 uses this; F2/F3+ use skopt.sampler directly)
 │
 ├── data/
 │   ├── problems/                 # Local appended data: only observations.csv per function (no .npy under data/)
@@ -22,7 +23,10 @@ black-box-optimization/
 │   (data/results/)               # Exported plots (observations+contour, 3D surface, GP kernels, all acquisition points)
 │
 ├── notebooks/
-│   ├── function_1_Radiation-Detection.ipynb … function_8_High-dimensional-ML-Model.ipynb  # One per function (1–8); same workflow, dimension-specific pairwise plots
+│   ├── function_1_Radiation-Detection.ipynb  # F1 (2D): full options — 3 kernels, all acquisitions, baselines
+│   ├── function_2_Mystery-ML-Model.ipynb     # F2 (2D): d=2 reference — 3 kernels, ensemble, configurable bounds
+│   ├── function_3_Drug-Discovery.ipynb       # F3 (3D): d≥3 reference — 2D pairwise, GP slices, ensemble
+│   ├── function_4 … function_8              # Adapt from F2 (d=2) or F3 (d≥3) template
 │
 ├── run_all.py                   # Submission summary (portal strings); --execute-notebooks runs all 8 notebooks
 ├── scripts/                     # Optional; if present, run_all.py runs *.py here before summary
@@ -58,15 +62,19 @@ black-box-optimization/
 - `notebooks/weekly_review/` — weekly notes
 - `src/objective/`, `src/experiments/` — see private notes (e.g. in docs_private/)
 
-## Function 1 notebook workflow (in use)
+## Notebook workflow (F2/F3 template — in use)
 
-1. **Setup and load data** — Imports (GP, skopt acquisition, plot_utilities), repo root, load from local or `initial_data`, flags (IF_EXPORT_PLOT, IF_EXPORT_QUERIES, IF_APPEND_DATA).
-2. **Visualize** — Grid, `min_dist` (distance to nearest observation), IDW y; 2D scatter + contour, 3D surface.
-3. **Suggest next point (Bayesian)** — GP (RBF, Matérn ν=1.5, RBF+WhiteKernel); acquisition (EI, UCB, PI, Thompson, Entropy) × RBF/Matérn; sanity checks (low σ, (0,0) suggestions); baseline: exploit, explore, **high distance** (argmax of `min_dist`).
-4. **Illustrate** — One contour of `min_dist` with all acquisition suggestions + Naive exploit, Random explore, High distance.
-5. **Select next query** — Default: `next_x = x_best_EI_RBF` (**F1: EI**). Alternatives: `next_x_high_dist`, `x_best_UCB_RBF`, `next_x_exploit`, `next_x_explore`.
-6. **Append new feedback** — After portal returns (x,y), append to `data/problems/function_1/` when IF_APPEND_DATA=True.
-7. **Save suggestion** — When IF_EXPORT_QUERIES=True, write `next_x` to `data/submissions/function_1/` (npy + portal-format txt).
+1. **Setup and load data** — Imports (GP, skopt acquisition/sampler), repo root, load from local CSV or `initial_data`, flags.
+2. **Parameters** — Kernel choice (`GP_KERNEL = "auto"` or manual), `OPTIMIZE_KERNEL`, kernel bounds (constant scale, length scale, white noise), acquisition coefficients (`XI_EI_PI`, `KAPPA_UCB`), candidate sampling, ensemble vs solo mode.
+3. **Visualize** — Observations scatter, IDW contour, convergence plot. d=2: 2D contour + 3D surface. d≥3: 2D pairwise projections + IDW.
+4. **GP surrogate** — Fit 3 kernels (RBF, Matérn, RBF+WhiteKernel) with configurable bounds; select best by LML. 3×2 grid (mean + std). d≥3: 2D slices at median.
+5. **Acquisition** — EI/PI/UCB computed for all kernels via `skopt.acquisition`; ensemble logic (agree → EI argmax, disagree → centroid) or solo. Baselines: exploit + explore (no high-distance in F2/F3+).
+6. **Select & illustrate** — Final plot: d=2: 1×2 (mean + std); d≥3: 3×2 GP slices with acquisition markers.
+7. **Export** — Append new observation (§6) and/or save next_x (§7).
+
+**F1** retains the original full-options layout (all acquisition functions, high-distance baseline, Thompson/Entropy).
+
+For step-by-step adaptation checklists, see `docs_private/FUNCTION_NOTEBOOK_ADAPTATION_GUIDE.md`.
 
 **run_all.py** — Run from project root. Prints full portal strings for functions 1–8 and file paths. Use `--execute-notebooks` to run all 8 notebooks (generates submissions); `--skip-scripts` to skip running `scripts/*.py`.
 
@@ -80,7 +88,7 @@ Write safety: `assert_not_under_initial_data(path, project_root)` only forbids w
 
 ### `src/utils/`
 - load_challenge_data.py (in use). plot_utilities.py (in use): style_axis, add_colorbar, style_legend, DEFAULT_FONT_SIZE_*, DEFAULT_EXPORT_*.
-- sampling_utils.py (in use): sample_candidates(n, dim, method='random'|'lhs'|'sobol'|'grid') for uniform/space-filling candidate pools in [0,1]^d (LHS, Sobol, or regular lattice/grid); use in notebooks for better coverage than plain random.
+- sampling_utils.py (in use by F1): `sample_candidates()` wrapper. F2/F3+ use `skopt.sampler.Sobol` / `Lhs` directly for space-filling candidate pools.
 - Add: logging.py, visualization.py, metrics.py as needed.
 
 ### `configs/problems/`
@@ -91,4 +99,4 @@ Write safety: `assert_not_under_initial_data(path, project_root)` only forbids w
 
 ### `docs/` and `docs_private/`
 - project_roadmap.md, Capstone_Project_FAQs.md. Add learning_log.md, algorithms_summary.md as needed.
-- docs_private/: ENSEMBLE_ACQUISITION_GUIDE.md, TODO.md. function_0_devel.ipynb is tracked (gitignore exception).
+- docs_private/: ENSEMBLE_ACQUISITION_GUIDE.md, FUNCTION_NOTEBOOK_ADAPTATION_GUIDE.md, TODO.md. function_0_devel.ipynb is tracked (gitignore exception).
