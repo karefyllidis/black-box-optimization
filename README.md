@@ -62,9 +62,9 @@ We optimize **8 unknown** objective functions with a limited number of expensive
 
 ### Methods
 
-- **Surrogate:** GP regression with three kernels — RBF, Matérn (ν=1.5), RBF+WhiteKernel. All three are fitted; the kernel with the highest log-marginal-likelihood is selected automatically (`GP_KERNEL = "auto"`), or can be forced manually. Kernel hyperparameter bounds (constant scale, length scale, white noise) are configurable per notebook; optimization can be toggled via `OPTIMIZE_KERNEL`.
-- **Acquisition:** Notebooks use **scikit-optimize (skopt)** `gaussian_ei`, `gaussian_pi`, `gaussian_lcb`. Acquisition is maximised over a **candidate set** generated via `skopt.sampler.Sobol` or `Lhs` (configurable with `CANDIDATE_SAMPLING_METHOD`) for space-filling coverage in [0,1]^d. **Ensemble acquisition** (EI+PI+UCB; agree → EI argmax, disagree → centroid) is implemented in F2/F3 and `function_0_devel`; see `docs_private/ENSEMBLE_ACQUISITION_GUIDE.md`. An alternative acquisition implementation lives in `src/optimizers/bayesian/acquisition_functions.py` (EI, PI, UCB, Thompson Sampling, Entropy Search).
-- **Baselines:** “Exploit” (perturb current best) and “Explore” (random candidate). Default acquisition: **EI**. (F1 retains a “High distance” baseline; F2/F3+ replaced it with a proximity warning.)
+- **Surrogate:** GP regression with three kernels — RBF, Matérn (ν=1.5), RBF+WhiteKernel. All three are fitted; the kernel with the highest log-marginal-likelihood is selected automatically (`GP_KERNEL = None` → LML auto-select), or can be forced manually. Kernel hyperparameter bounds (constant scale, length scale, white noise) are configurable per notebook; optimization can be toggled via `OPTIMIZE_KERNEL`. White noise bounds default to `(1e-12, 1e1)` for near-noiseless functions.
+- **Acquisition:** Notebooks use **scikit-optimize (skopt)** `gaussian_ei`, `gaussian_pi`, `gaussian_lcb`. Acquisition is maximised over a **candidate set** generated via `skopt.sampler.Sobol` or `Lhs` (configurable with `CANDIDATE_SAMPLING_METHOD`) for space-filling coverage in [0,1]^d. Candidate counts (`n_cand`) are always powers of 2 for Sobol balance properties (e.g. `2**18`). **Ensemble acquisition** (EI+PI+UCB; agree → EI argmax, disagree → centroid) is available in all notebooks (F1–F8); see `docs_private/ENSEMBLE_ACQUISITION_GUIDE.md`. An alternative acquisition implementation lives in `src/optimizers/bayesian/acquisition_functions.py` (EI, PI, UCB, Thompson Sampling, Entropy Search).
+- **Baselines:** “Exploit” (perturb current best) and “Explore” (random candidate). Default acquisition configurable via `SOLO_STRATEGY` (EI, PI, or UCB). (F1 retains a “High distance” baseline; F2–F8 use a proximity warning instead.)
 - **Other methods:** No **linear/logistic regression**—surface is nonlinear and multimodal. **SVMs** could classify high vs low regions (soft-margin or kernel); GP kept as main surrogate for uncertainty (needed for EI). Possible combo: SVM for regions, GP+EI for exact query.
 
 ### Rounds 1–3 (evolution)
@@ -129,14 +129,14 @@ black-box-optimization/
 ├── data/results/                  # Exported plots (when IF_EXPORT_PLOT = True; see Write safety below)
 │
 ├── notebooks/
-│   ├── function_1_Radiation-Detection.ipynb   # Function 1 (2D): full options — 3 GP kernels, all acquisitions, baselines
-│   ├── function_2_Mystery-ML-Model.ipynb       # Function 2 (2D): d=2 reference — 3 kernels, ensemble acquisition, configurable bounds
-│   ├── function_3_Drug-Discovery.ipynb        # Function 3 (3D): d≥3 reference — 2D pairwise projections, GP slices, ensemble
-│   ├── function_4_Warehouse-Logistics.ipynb  # Function 4 (4D): 6 pairwise 2D plots, GP slices, acquisition
-│   ├── function_5_Chemical-Process-Yield.ipynb   # Function 5 (4D): same workflow as function_4
-│   ├── function_6_Recipe-Optimization.ipynb      # Function 6 (5D): 10 pairwise plots
-│   ├── function_7_Hyperparameter-Tuning.ipynb    # Function 7 (6D): 15 pairwise plots
-│   └── function_8_High-dimensional-ML-Model.ipynb # Function 8 (8D): 28 pairwise plots
+│   ├── function_1_Radiation-Detection.ipynb      # F1 (2D): full options — 3 GP kernels, all acquisitions, baselines
+│   ├── function_2_Mystery-ML-Model.ipynb         # F2 (2D): d=2 template — 3 kernels, ensemble, configurable bounds
+│   ├── function_3_Drug-Discovery.ipynb           # F3 (3D): d≥3 template — pairwise projections, GP slices, ensemble
+│   ├── function_4_Warehouse-Logistics.ipynb      # F4 (4D): 6 pairwise plots, GP slices, per-row colorbars
+│   ├── function_5_Chemical-Process-Yield.ipynb   # F5 (4D): 6 pairwise plots, same workflow as F4
+│   ├── function_6_Recipe-Optimization.ipynb      # F6 (5D): 10 pairwise plots, per-row colorbars
+│   ├── function_7_Hyperparameter-Tuning.ipynb    # F7 (6D): 15 pairwise plots, per-row colorbars
+│   └── function_8_High-dimensional-ML-Model.ipynb # F8 (8D): 28 pairwise plots, per-row colorbars
 │
 ├── run_all.py                  # Print submission summary; optional: --execute-notebooks, --skip-scripts
 ├── configs/
@@ -150,7 +150,10 @@ black-box-optimization/
 │   ├── project_roadmap.md        # Current structure and planned components
 │   └── Capstone_Project_FAQs.md
 │
+├── scripts/                     # append_week{1..4}_results.py — append portal feedback to observations.csv
+│
 ├── docs_private/                 # Private notes (mostly gitignored)
+│   ├── project_log.md            # Weekly evolution, assumptions, reflections
 │   └── TODO.md
 │
 ├── submission-template/          # Data sheet, model card, README for portfolio
@@ -158,9 +161,9 @@ black-box-optimization/
 └── README.md
 ```
 
-**Notebooks:** One notebook per function (1–8). **Function 2** is the canonical d=2 template; **Function 3** is the d≥3 template. Both use three GP kernels (RBF, Matérn, RBF+WhiteKernel) with automatic best-kernel selection, ensemble acquisition (EI+PI+UCB: agree → EI argmax, disagree → centroid), and configurable kernel bounds / optimization. **Function 1** retains the original full-options layout (all acquisition functions, baselines). Candidate sampling uses `skopt.sampler.Sobol` or `Lhs` for space-filling coverage. **function_0_devel** (`docs_private/notebooks/`) is a 1D tutorial: GP kernels, skopt acquisition, ensemble. For adapting F4–F8, see `docs_private/FUNCTION_NOTEBOOK_ADAPTATION_GUIDE.md`.
+**Notebooks:** One notebook per function (1–8), all fully adapted and operational. **Function 2** is the canonical d=2 template; **Function 4** is the d≥3 template (extended from F3). All notebooks use three GP kernels (RBF, Matérn, RBF+WhiteKernel) with automatic best-kernel selection (LML), configurable kernel bounds, and ensemble/solo acquisition modes. **Function 1** retains the original full-options layout. F3–F8 use coarser visualisation grids (`n_grid_viz`) for fast plotting and finer Sobol candidate sets (`n_cand`, always a power of 2) for acquisition. d≥3 notebooks feature 2D pairwise projections with per-row colorbars and GP slices at median of held-out dimensions. **function_0_devel** (`docs_private/notebooks/`) is a 1D tutorial. See `docs_private/FUNCTION_NOTEBOOK_ADAPTATION_GUIDE.md` for the full adaptation guide.
 
-Further planned components (GP surrogate, extra notebooks, etc.) are in `docs/project_roadmap.md`.
+Further details on planned components are in `docs/project_roadmap.md`.
 
 ## Allowed techniques
 
@@ -190,7 +193,7 @@ You are not required to build a submission optimizer from scratch or to find the
    - **6. Append new feedback** — After portal returns \((x,y)\), run with `IF_APPEND_DATA = True`.
    - **7. Save suggestion** — With `IF_EXPORT_QUERIES = True`, write `next_x` to `data/submissions/function_N/`.
 
-   **Templates:** Use **Function 2** as the d=2 template and **Function 3** as the d≥3 template. **Function 1** retains the original full-options layout. See `docs_private/FUNCTION_NOTEBOOK_ADAPTATION_GUIDE.md` for step-by-step adaptation checklists.
+   **Templates:** **Function 2** is the d=2 template; **Function 4** is the d≥3 template (all F3–F8 are fully adapted). **Function 1** retains the original full-options layout. See `docs_private/FUNCTION_NOTEBOOK_ADAPTATION_GUIDE.md` for the full adaptation guide and checklists.
 
 4. **Acquisition & utilities:** Notebooks use `skopt.acquisition` (`gaussian_ei`, `gaussian_pi`, `gaussian_lcb`) and `skopt.sampler` (Sobol/LHS). Alternative acquisition: `src/optimizers/bayesian/acquisition_functions.py`. Plot styling: `src/utils/plot_utilities.py`. **Tutorial:** `docs_private/notebooks/function_0_devel.ipynb`. Complete the submission using templates in `submission-template/`.
 
@@ -198,7 +201,7 @@ You are not required to build a submission optimizer from scratch or to find the
    ```bash
    python run_all.py
    ```
-   By default this runs any scripts in `scripts/` (e.g. `append_week1_results.py`, `append_week2_results.py`, `append_week3_results.py`, `append_week4_results.py` to append portal feedback to `data/problems/function_N/observations.csv`), then prints a **submission summary**: full portal strings (copy-paste per function) and where files live. Options:
+   By default this runs any scripts in `scripts/` (e.g. `append_week1_results.py` through `append_week4_results.py` to append portal feedback to `data/problems/function_N/observations.csv`), then prints a **submission summary**: full portal strings (copy-paste per function) and where files live. Options:
    - `python run_all.py --execute-notebooks` — run all 8 function notebooks (writes `data/submissions/function_N/`; needs `nbconvert`).
    - `python run_all.py --skip-scripts` — skip running any scripts in `scripts/` (if present); only show the summary.
 
@@ -209,8 +212,9 @@ You are not required to build a submission optimizer from scratch or to find the
 | **README.md** (this file) | Project overview, inputs/outputs, technical approach, structure, getting started |
 | **docs/project_roadmap.md** | Current structure, notebook workflow, planned components |
 | **docs/Capstone_Project_FAQs.md** | Capstone FAQs: data, submission, method |
+| **docs_private/FUNCTION_NOTEBOOK_ADAPTATION_GUIDE.md** | Complete adaptation guide: F2 (d=2) / F4 (d≥3) templates, checklists, dimension reference, styling patterns |
 | **docs_private/ENSEMBLE_ACQUISITION_GUIDE.md** | Ensemble EI+PI+UCB: agree/disagree logic, skopt usage |
-| **docs_private/FUNCTION_NOTEBOOK_ADAPTATION_GUIDE.md** | Adapting notebooks: F2 (d=2) / F3 (d≥3) templates, checklists, dimension reference |
+| **docs_private/project_log.md** | Weekly evolution, assumptions, results, reflections, peer ideas |
 | **docs_private/TODO.md** | Near-term tasks and status |
 | **docs_private/notebooks/function_0_devel.ipynb** | 1D tutorial (tracked); GP kernels, skopt, ensemble |
 
