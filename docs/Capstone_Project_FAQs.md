@@ -416,7 +416,7 @@ Action: Review all function inputs; remove spaces around hyphens; ensure every n
 
 ## This repository
 
-- **Acquisition:** All function notebooks use **EI (Expected Improvement)** as the primary acquisition; `next_x = x_best_EI_RBF` by default. Acquisition via **skopt** (`gaussian_ei`, `gaussian_pi`, `gaussian_lcb`). Alternatives: UCB, high-distance, exploit, documented in each notebook.
+- **Acquisition:** All function notebooks use **EI (Expected Improvement)** as the primary acquisition; `next_x = x_best_EI_RBF` by default. Acquisition via **skopt** (`gaussian_ei`, `gaussian_pi`, `gaussian_lcb`). To avoid re-evaluating at or near existing points, candidates within `MIN_DIST_THRESHOLD` (default 0.05) of any observation are masked out; if the acquisition argmax would fall in that set, the next query uses the high-distance fallback. Alternatives: UCB, high-distance, exploit, documented in each notebook.
 - **Ensemble:** `docs_private/notebooks/function_0_devel.ipynb` implements ensemble acquisition (EI+PI+UCB): centroid when they disagree, EI when they agree. See `docs_private/ENSEMBLE_ACQUISITION_GUIDE.md`.
 - **Docs:** `README.md` (overview, workflow, structure), `docs/project_roadmap.md` (roadmap).
 
