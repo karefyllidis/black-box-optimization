@@ -24,6 +24,8 @@ References
 .. [5] Hennig, P., & Schuler, C. J. (2012). Entropy search for information-efficient
        global optimization. JMLR, 13(1), 1809–1837.
        (Full ES: minimize entropy of location of optimum; no simple closed form.)
+
+NOTE: This file is not used in the project - instead, we use skopt.acquisition.gaussian_ei, gaussian_pi, gaussian_lcb.
 """
 import numpy as np
 from scipy.stats import norm

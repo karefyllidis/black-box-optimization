@@ -154,3 +154,5 @@ data/problems/
 
 # Plots folder (exported figures from notebooks)
 data/results/
+
+docs/TODO.md
