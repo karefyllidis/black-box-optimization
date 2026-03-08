@@ -67,11 +67,12 @@ We optimize **8 unknown** objective functions with a limited number of expensive
 - **Baselines:** “Exploit” (perturb current best) and “Explore” (random candidate). Default acquisition configurable via `SOLO_STRATEGY` (EI, PI, or UCB). (F1 retains a “High distance” baseline; F2–F8 use a proximity warning instead.)
 - **Other methods:** No **linear/logistic regression**—surface is nonlinear and multimodal. **SVMs** could classify high vs low regions (soft-margin or kernel); GP kept as main surrogate for uncertainty (needed for EI). Possible combo: SVM for regions, GP+EI for exact query.
 
-### Rounds 1–3 (evolution)
+### Rounds (evolution)
 
 - **Round 1:** Exploration-heavy; ~10 points, high uncertainty. EI/UCB over Sobol/LHS candidates. Default: EI (sometimes UCB with higher κ).
 - **Round 2:** Same method; 11 points after Week 1. Posterior improved; suggestion changed without changing the algorithm. Exploration bonus unchanged (5D–8D still uncertain).
 - **Round 3:** ~12–14 points. More trust in EI over fixed candidates; heuristics (Sobol/grid), default RBF, no GP tuning. EI single criterion; GP uncertainty drives exploration.
+- **Rounds 4–6:** Per-function tuning; kernel choice by LML (RBF, Matérn, RBF+WhiteKernel); ensemble acquisition (EI+PI+UCB) or solo EI; ARD length scales used to interpret dimension importance (e.g. F8). Progressive refinement: early rounds coarse (which regions have signal), later rounds narrow around promising basins. Duplicate avoidance (MIN_DIST_THRESHOLD) and boundary masking (F1–F3 only) throughout. See `docs_private/canvas_submissions_archive/` for module-by-module reflections.
 
 ### Exploration–exploitation
 
@@ -148,20 +149,24 @@ black-box-optimization/
 │
 ├── docs/
 │   ├── project_roadmap.md        # Current structure and planned components
-│   └── Capstone_Project_FAQs.md
+│   ├── Capstone_Project_FAQs.md  # Capstone FAQs: data, submission, method
+│   ├── TECHNICAL_FOUNDATIONS.md  # Justification, key papers, library choices (see § References)
+│   └── Section_B_Reflection_Round6_CNN_and_BBO.md  # Module 17.1 reflection (optional copy for board)
 │
-├── scripts/                     # append_week{1..4}_results.py — append portal feedback to observations.csv
+├── scripts/                     # append_week{1..5}_results.py — append portal feedback to observations.csv
 │
 ├── docs_private/                 # Private notes (mostly gitignored)
 │   ├── project_log.md            # Weekly evolution, assumptions, reflections
-│   └── TODO.md
+│   ├── TODO.md
+│   ├── canvas_submissions_archive/  # Submitted reflections (Modules 12–17)
+│   └── similar_projects/        # Notes from BBO starter kit; HEBO and other references
 │
 ├── submission-template/          # Data sheet, model card, README for portfolio
 ├── requirements.txt
 └── README.md
 ```
 
-**Notebooks:** One notebook per function (1–8), all fully adapted and operational. **Function 2** is the canonical d=2 template; **Function 4** is the d≥3 template (extended from F3). All notebooks use three GP kernels (RBF, Matérn, RBF+WhiteKernel) with automatic best-kernel selection (LML), configurable kernel bounds, and ensemble/solo acquisition modes. **Function 1** retains the original full-options layout. F3–F8 use coarser visualisation grids (`n_grid_viz`) for fast plotting and finer Sobol candidate sets (`n_cand`, always a power of 2) for acquisition. d≥3 notebooks feature 2D pairwise projections with per-row colorbars and GP slices at median of held-out dimensions. **function_0_devel** (`docs_private/notebooks/`) is a 1D tutorial. See `docs_private/FUNCTION_NOTEBOOK_ADAPTATION_GUIDE.md` for the full adaptation guide.
+**Notebooks:** One notebook per function (1–8), all fully adapted and operational. **Function 2** is the canonical d=2 template; **Function 4** is the d≥3 template (extended from F3). All notebooks use three GP kernels (RBF, Matérn, RBF+WhiteKernel) with automatic best-kernel selection (LML), configurable kernel bounds, and ensemble/solo acquisition modes. **Function 1** retains the original full-options layout. F3–F8 use coarser visualisation grids (`n_grid_viz`) for fast plotting and finer Sobol candidate sets (`n_cand`, always a power of 2) for acquisition. d≥3 notebooks feature 2D pairwise projections with per-row colorbars and GP slices at median of held-out dimensions. **function_0_devel** (`docs_private/notebooks/`) is a 1D tutorial. See `docs_private/notes_and_references/function_notebook_adaptation_guide.md` for the full adaptation guide.
 
 Further details on planned components are in `docs/project_roadmap.md`.
 
@@ -193,7 +198,7 @@ You are not required to build a submission optimizer from scratch or to find the
    - **6. Append new feedback** — After portal returns \((x,y)\), run with `IF_APPEND_DATA = True`.
    - **7. Save suggestion** — With `IF_EXPORT_QUERIES = True`, write `next_x` to `data/submissions/function_N/`.
 
-   **Templates:** **Function 2** is the d=2 template; **Function 4** is the d≥3 template (all F3–F8 are fully adapted). **Function 1** retains the original full-options layout. See `docs_private/FUNCTION_NOTEBOOK_ADAPTATION_GUIDE.md` for the full adaptation guide and checklists.
+   **Templates:** **Function 2** is the d=2 template; **Function 4** is the d≥3 template (all F3–F8 are fully adapted). **Function 1** retains the original full-options layout. See `docs_private/notes_and_references/function_notebook_adaptation_guide.md` for the full adaptation guide and checklists.
 
 4. **Acquisition & utilities:** Notebooks use `skopt.acquisition` (`gaussian_ei`, `gaussian_pi`, `gaussian_lcb`) and `skopt.sampler` (Sobol/LHS). Alternative acquisition: `src/optimizers/bayesian/acquisition_functions.py`. Plot styling: `src/utils/plot_utilities.py`. **Tutorial:** `docs_private/notebooks/function_0_devel.ipynb`. Complete the submission using templates in `submission-template/`.
 
@@ -212,10 +217,13 @@ You are not required to build a submission optimizer from scratch or to find the
 | **README.md** (this file) | Project overview, inputs/outputs, technical approach, structure, getting started |
 | **docs/project_roadmap.md** | Current structure, notebook workflow, planned components |
 | **docs/Capstone_Project_FAQs.md** | Capstone FAQs: data, submission, method |
-| **docs_private/FUNCTION_NOTEBOOK_ADAPTATION_GUIDE.md** | Complete adaptation guide: F2 (d=2) / F4 (d≥3) templates, checklists, dimension reference, styling patterns |
-| **docs_private/ENSEMBLE_ACQUISITION_GUIDE.md** | Ensemble EI+PI+UCB: agree/disagree logic, skopt usage |
+| **docs/TECHNICAL_FOUNDATIONS.md** | Technical justification, key papers (Rasmussen & Williams, Jones et al., NeurIPS 2020 BBO), library choices and alternatives |
+| **docs_private/notes_and_references/function_notebook_adaptation_guide.md** | Complete adaptation guide: F2 (d=2) / F4 (d≥3) templates, checklists, dimension reference, styling patterns |
+| **docs_private/notes_and_references/ensemble_acquisition_guide.md** | Ensemble EI+PI+UCB: agree/disagree logic, skopt usage |
 | **docs_private/project_log.md** | Weekly evolution, assumptions, results, reflections, peer ideas |
 | **docs_private/TODO.md** | Near-term tasks and status |
+| **docs_private/canvas_submissions_archive/canvas_submissions_all.md** | Archive of submitted reflections (Modules 12–17) |
+| **docs_private/similar_projects/** | Notes from BBO starter kit; HEBO and other references for optional follow-up |
 | **docs_private/notebooks/function_0_devel.ipynb** | 1D tutorial (tracked); GP kernels, skopt, ensemble |
 
 *Note:* `docs_private/` is mostly gitignored; `function_0_devel.ipynb` is an exception (tracked).
@@ -223,6 +231,6 @@ You are not required to build a submission optimizer from scratch or to find the
 ## References
 
 - **NeurIPS 2020 BBO Challenge:** [Official starter kit](https://github.com/rdturnermtl/bbo_challenge_starter_kit) (suggest–observe API, Bayesmark, example submissions: skopt, hyperopt, nevergrad, turbo, etc.). Leaderboard used minimization over hidden ML tuning tasks; our capstone uses the same BO ideas (GP surrogate + acquisition) with a **maximization**, notebook-based, one-query-per-week workflow and fixed [0,1]^d domains.
-- NeurIPS 2020 BBO Challenge (Huawei: GPs + heteroscedasticity/non-stationarity; Nvidia: ensembles; JetBrains: GP + SVM + nearest neighbour).
+- NeurIPS 2020 BBO Challenge (Huawei/Noah's Ark: HEBO — GPs + heteroscedasticity/non-stationarity; Nvidia: ensembles; JetBrains: GP + SVM + nearest neighbour). See `docs/TECHNICAL_FOUNDATIONS.md` and `docs_private/similar_projects/` for notes.
 - Sample repos: [Bayesian Optimisation (soham96)](https://github.com/soham96/hyperparameter_optimisation), [Bayesian Optimization with XGBoost (solegalli)](https://github.com/solegalli/hyperparameter-optimization), [Bayesian Hyperparameter Optimization of GBM (WillKoehrsen)](https://github.com/WillKoehrsen/hyperparameter-optimization).
 - Capstone Project FAQs: `docs/Capstone_Project_FAQs.md`.

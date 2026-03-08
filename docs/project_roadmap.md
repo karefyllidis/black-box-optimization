@@ -44,15 +44,18 @@ black-box-optimization/
 ├── docs/
 │   ├── project_roadmap.md        # (this file)
 │   ├── Capstone_Project_FAQs.md
+│   ├── TECHNICAL_FOUNDATIONS.md  # Justification, key papers, library choices
 │   └── …
 │
 ├── docs_private/                 # Private notes (contents gitignored except below)
 │   ├── notebooks/
 │   │   └── function_0_devel.ipynb   # 1D tutorial (tracked): GP kernels, skopt acquisition, ensemble EI+PI+UCB, true max
-│   ├── FUNCTION_NOTEBOOK_ADAPTATION_GUIDE.md  # Complete adaptation guide: templates, checklists, styling patterns
-│   ├── ENSEMBLE_ACQUISITION_GUIDE.md          # Ensemble EI+PI+UCB logic
+│   ├── function_notebook_adaptation_guide.md  # Complete adaptation guide: templates, checklists, styling patterns
+│   ├── ensemble_acquisition_guide.md          # Ensemble EI+PI+UCB logic
 │   ├── project_log.md              # Weekly evolution, assumptions, reflections
 │   ├── TODO.md
+│   ├── canvas_submissions_archive/   # Submitted reflections (Modules 12–17)
+│   ├── similar_projects/            # Notes from BBO starter kit; HEBO and other references
 │   ├── phase_a_training/            # Stage 1 (archived; no longer relevant)
 │   └── ...                        # Rest gitignored via docs_private/*
 │
@@ -80,7 +83,7 @@ black-box-optimization/
 
 **F1** retains the original full-options layout (all acquisition functions, high-distance baseline, Thompson/Entropy). All F3–F8 notebooks are fully adapted with dimension-specific pair counts, per-row colorbars, and optimised rendering.
 
-For step-by-step adaptation checklists, see `docs_private/FUNCTION_NOTEBOOK_ADAPTATION_GUIDE.md`.
+For step-by-step adaptation checklists, see `docs_private/notes_and_references/function_notebook_adaptation_guide.md`.
 
 **run_all.py** — Run from project root. Prints full portal strings for functions 1–8 and file paths. Use `--execute-notebooks` to run all 8 notebooks (generates submissions); `--skip-scripts` to skip running `scripts/*.py`.
 
@@ -105,4 +108,4 @@ Write safety: `assert_not_under_initial_data(path, project_root)` only forbids w
 
 ### `docs/` and `docs_private/`
 - project_roadmap.md (this file), Capstone_Project_FAQs.md. Add learning_log.md, algorithms_summary.md as needed.
-- docs_private/: FUNCTION_NOTEBOOK_ADAPTATION_GUIDE.md (complete adaptation guide with checklists, styling patterns, dimension reference), ENSEMBLE_ACQUISITION_GUIDE.md, project_log.md (weekly evolution), TODO.md, README_PRIVATE.md. function_0_devel.ipynb is tracked (gitignore exception).
+- docs_private/: notes_and_references/ (function_notebook_adaptation_guide.md, ensemble_acquisition_guide.md, HEBO-like notes), project_log.md (weekly evolution), TODO.md, README_PRIVATE.md. function_0_devel.ipynb is tracked (gitignore exception).
