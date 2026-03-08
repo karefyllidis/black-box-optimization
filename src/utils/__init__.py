@@ -11,11 +11,13 @@ from .plot_utilities import (
     plot_convergence,
     plot_gp_1d,
     plot_parallel_coordinates,
+    prepare_surface_for_plot,
     style_axis,
     style_axis_3d,
     style_legend,
 )
 from .sampling_utils import sample_candidates
+from .warping import apply_output_warping, inverse_output_warping
 
 __all__ = [
     "DEFAULT_EXPORT_DPI",
@@ -30,8 +32,11 @@ __all__ = [
     "plot_convergence",
     "plot_gp_1d",
     "plot_parallel_coordinates",
+    "prepare_surface_for_plot",
     "style_axis",
     "style_axis_3d",
     "style_legend",
     "sample_candidates",
+    "apply_output_warping",
+    "inverse_output_warping",
 ]

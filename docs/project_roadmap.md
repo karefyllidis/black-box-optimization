@@ -14,7 +14,8 @@ black-box-optimization/
 │   │   └── bayesian/             # acquisition_functions.py (UCB, EI, PI, Thompson, Entropy Search)
 │   └── utils/
 │       ├── load_challenge_data.py # load_function_data(N), assert_not_under_initial_data (blocks writes under initial_data only)
-│       ├── plot_utilities.py     # style_axis, add_colorbar, style_legend; DEFAULT_FONT_SIZE_*, DEFAULT_EXPORT_*
+│       ├── plot_utilities.py     # style_axis, add_colorbar, style_legend, prepare_surface_for_plot, style_axis_3d; plot_2d_bo_state, plot_2d_function, plot_convergence, plot_gp_1d, plot_acquisition_1d, plot_bo_iteration_1d, plot_parallel_coordinates; DEFAULT_FONT_SIZE_*, DEFAULT_EXPORT_*
+│       ├── warping.py            # apply_output_warping(y, mode=None|"log"|"boxcox"); inverse_output_warping — HEBO-inspired y transform for GP
 │       └── sampling_utils.py    # sample_candidates() wrapper (F1 uses this; F2/F3+ use skopt.sampler directly)
 │
 ├── data/
@@ -33,7 +34,7 @@ black-box-optimization/
 │   └── function_8_High-dimensional-ML-Model.ipynb # F8 (8D): 28 pairwise plots, per-row colorbars
 │
 ├── run_all.py                   # Submission summary (portal strings); --execute-notebooks runs all 8 notebooks
-├── scripts/                     # append_week{1..4}_results.py — portal feedback → observations.csv
+├── scripts/                     # append_week{1..5}_results.py — portal feedback → observations.csv
 ├── configs/
 │   └── problems/                 # (removed for now; see docs_private/private_notes.md)
 │
@@ -47,18 +48,7 @@ black-box-optimization/
 │   ├── TECHNICAL_FOUNDATIONS.md  # Justification, key papers, library choices
 │   └── …
 │
-├── docs_private/                 # Private notes (contents gitignored except below)
-│   ├── notebooks/
-│   │   └── function_0_devel.ipynb   # 1D tutorial (tracked): GP kernels, skopt acquisition, ensemble EI+PI+UCB, true max
-│   ├── function_notebook_adaptation_guide.md  # Complete adaptation guide: templates, checklists, styling patterns
-│   ├── ensemble_acquisition_guide.md          # Ensemble EI+PI+UCB logic
-│   ├── project_log.md              # Weekly evolution, assumptions, reflections
-│   ├── TODO.md
-│   ├── canvas_submissions_archive/   # Submitted reflections (Modules 12–17)
-│   ├── similar_projects/            # Notes from BBO starter kit; HEBO and other references
-│   ├── phase_a_training/            # Stage 1 (archived; no longer relevant)
-│   └── ...                        # Rest gitignored via docs_private/*
-│
+├── docs_private/                 # Private notes (gitignored; structure not listed in open repo)
 ├── requirements.txt
 ├── .gitignore
 └── README.md
@@ -66,7 +56,7 @@ black-box-optimization/
 
 **Removed for now (add back when needed):**
 - `configs/algorithms/`, `configs/experiments/` — algorithm/experiment configs
-- Scripts in `scripts/` — run_all.py runs any `scripts/*.py`; folder may be empty
+- Scripts in `scripts/` — run_all.py runs any `scripts/*.py` (e.g. append_week1..5_results.py); folder may be empty
 - `tests/test_objectives/` — we have no src/objective
 - `notebooks/weekly_review/` — weekly notes
 - `src/objective/`, `src/experiments/` — see private notes (e.g. in docs_private/)
@@ -83,9 +73,9 @@ black-box-optimization/
 
 **F1** retains the original full-options layout (all acquisition functions, high-distance baseline, Thompson/Entropy). All F3–F8 notebooks are fully adapted with dimension-specific pair counts, per-row colorbars, and optimised rendering.
 
-For step-by-step adaptation checklists, see `docs_private/notes_and_references/function_notebook_adaptation_guide.md`.
+For step-by-step adaptation checklists, see `docs_private/40_notes_and_references/function_notebook_adaptation_guide.md`.
 
-**run_all.py** — Run from project root. Prints full portal strings for functions 1–8 and file paths. Use `--execute-notebooks` to run all 8 notebooks (generates submissions); `--skip-scripts` to skip running `scripts/*.py`.
+**run_all.py** — Run from project root. Runs any `scripts/*.py` (e.g. append_week1..5_results.py), then prints full portal strings for functions 1–8 and file paths. Use `--execute-notebooks` to run all 8 notebooks (generates submissions); `--skip-scripts` to skip running scripts.
 
 Write safety: `assert_not_under_initial_data(path, project_root)` only forbids writes under `project_root/initial_data/`; `data/results/`, `data/submissions/`, `data/problems/` are allowed.
 
@@ -96,7 +86,8 @@ Write safety: `assert_not_under_initial_data(path, project_root)` only forbids w
 - Add: GP surrogate, base_optimizer.py when you run BO in code.
 
 ### `src/utils/`
-- load_challenge_data.py (in use). plot_utilities.py (in use): style_axis, add_colorbar, style_legend, DEFAULT_FONT_SIZE_*, DEFAULT_EXPORT_*.
+- load_challenge_data.py (in use). plot_utilities.py (in use): style_axis, add_colorbar, style_legend, prepare_surface_for_plot, style_axis_3d; plot_2d_bo_state, plot_2d_function, plot_convergence, plot_gp_1d, plot_acquisition_1d, plot_bo_iteration_1d, plot_parallel_coordinates; DEFAULT_FONT_SIZE_*, DEFAULT_EXPORT_*.
+- warping.py (in use): `apply_output_warping(y, mode=None|"log"|"boxcox")`, `inverse_output_warping` — HEBO-inspired output warping; all 8 notebooks use it when `OUTPUT_WARPING` is set; F1, F5, F7 default to `"log"`.
 - sampling_utils.py (in use by F1): `sample_candidates()` wrapper. F2/F3+ use `skopt.sampler.Sobol` / `Lhs` directly for space-filling candidate pools.
 - Add: logging.py, visualization.py, metrics.py as needed.
 
@@ -108,4 +99,4 @@ Write safety: `assert_not_under_initial_data(path, project_root)` only forbids w
 
 ### `docs/` and `docs_private/`
 - project_roadmap.md (this file), Capstone_Project_FAQs.md. Add learning_log.md, algorithms_summary.md as needed.
-- docs_private/: notes_and_references/ (function_notebook_adaptation_guide.md, ensemble_acquisition_guide.md, HEBO-like notes), project_log.md (weekly evolution), TODO.md, README_PRIVATE.md. function_0_devel.ipynb is tracked (gitignore exception).
+- docs_private/: private notes, project log, TODO, guides; one notebook is tracked (gitignore exception). Contents gitignored; structure not listed in open repo.

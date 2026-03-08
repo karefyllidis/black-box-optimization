@@ -62,7 +62,7 @@ We optimize **8 unknown** objective functions with a limited number of expensive
 
 ### Methods
 
-- **Surrogate:** GP regression with three kernels — RBF, Matérn (ν=1.5), RBF+WhiteKernel. All three are fitted; the kernel with the highest log-marginal-likelihood is selected automatically (`GP_KERNEL = None` → LML auto-select), or can be forced manually. Kernel hyperparameter bounds (constant scale, length scale, white noise) are configurable per notebook; optimization can be toggled via `OPTIMIZE_KERNEL`. White noise bounds default to `(1e-12, 1e1)` for near-noiseless functions.
+- **Surrogate:** GP regression with three kernels — RBF, Matérn (ν=1.5), RBF+WhiteKernel. All three are fitted; the kernel with the highest log-marginal-likelihood is selected automatically (`GP_KERNEL = None` → LML auto-select), or can be forced manually. Kernel hyperparameter bounds (constant scale, length scale, white noise) are configurable per notebook; optimization can be toggled via `OPTIMIZE_KERNEL`. White noise bounds default to `(1e-12, 1e1)` for near-noiseless functions. **Output warping (HEBO-inspired):** When the response y spans many orders of magnitude or is heavily skewed, the GP is fit on a transformed y for better behaviour. Each notebook has `OUTPUT_WARPING` in the parameters cell: `None` (raw y), `"log"`, or `"boxcox"`. The transform is applied in the load cell via `src.utils.warping.apply_output_warping`; acquisition and “best so far” use the warped y. **Default scaling by function:** F1 (radiation, sparse tiny y), F5 (chemical yield, y ~0.1–1e3), and F7 (hyperparameter, y ~0.003–1.4) use `OUTPUT_WARPING = "log"` by default; F2, F3, F4, F6, F8 use `None`. See `docs/TECHNICAL_FOUNDATIONS.md` for when to use warping.
 - **Acquisition:** Notebooks use **scikit-optimize (skopt)** `gaussian_ei`, `gaussian_pi`, `gaussian_lcb`. Acquisition is maximised over a **candidate set** generated via `skopt.sampler.Sobol` or `Lhs` (configurable with `CANDIDATE_SAMPLING_METHOD`) for space-filling coverage in [0,1]^d. Candidate counts (`n_cand`) are always powers of 2 for Sobol balance properties (e.g. `2**18`). **Duplicate avoidance:** Candidates whose minimum L2 distance to any existing observation is below `MIN_DIST_THRESHOLD` (default 0.05) have their acquisition value masked (EI/PI → −∞, LCB → +∞) so the argmax/argmin never selects a point we already have; if the chosen candidate would still be too close, the next query falls back to the high-distance candidate (farthest from all observations). **Boundary masking (optional):** When `BOUNDARY_MARGIN` > 0, candidates with any coordinate in [0, margin] or [1−margin, 1] are also masked (GP extrapolation is poor near edges). F1–F3 use `BOUNDARY_MARGIN = 0.05` (low-d); F4–F8 use `BOUNDARY_MARGIN = 0`. *Why no buffer in high d?* In [0,1]^d most of the volume lies near the boundary as d grows (e.g. the “interior” [0.1, 0.9]^d has volume 0.8^d → 0.17 in 8D). A fixed margin would exclude most of the space and could hide the optimum, so we leave boundary masking off for 4D–8D (curse of dimensionality). The acquisition cell defines a fallback (`try/except NameError: BOUNDARY_MARGIN = 0`) so it runs correctly even if the parameters cell was not run. **Ensemble acquisition** (EI+PI+UCB; agree → EI argmax, disagree → centroid) is available in all notebooks (F1–F8); see `docs_private/ENSEMBLE_ACQUISITION_GUIDE.md`. An alternative acquisition implementation lives in `src/optimizers/bayesian/acquisition_functions.py` (EI, PI, UCB, Thompson Sampling, Entropy Search).
 - **Baselines:** “Exploit” (perturb current best) and “Explore” (random candidate). Default acquisition configurable via `SOLO_STRATEGY` (EI, PI, or UCB). (F1 retains a “High distance” baseline; F2–F8 use a proximity warning instead.)
 - **Other methods:** No **linear/logistic regression**—surface is nonlinear and multimodal. **SVMs** could classify high vs low regions (soft-margin or kernel); GP kept as main surrogate for uncertainty (needed for EI). Possible combo: SVM for regions, GP+EI for exact query.
@@ -121,7 +121,8 @@ black-box-optimization/
 │   │   └── bayesian/              # acquisition_functions.py (UCB, EI, PI, Thompson Sampling, Entropy Search)
 │   └── utils/
 │       ├── load_challenge_data.py # load_function_data(N), assert_not_under_initial_data — read-only guard
-│       ├── plot_utilities.py      # style_axis, add_colorbar, style_legend; DEFAULT_FONT_SIZE_*, export DPI/format
+│       ├── plot_utilities.py      # style_axis, add_colorbar, style_legend, prepare_surface_for_plot; DEFAULT_FONT_SIZE_*, export DPI/format
+│       ├── warping.py            # apply_output_warping(y, mode=None|"log"|"boxcox"); inverse_output_warping — HEBO-inspired y transform for GP
 │       └── sampling_utils.py      # sample_candidates() wrapper (F1 uses this; F2/F3+ use skopt.sampler directly)
 │
 ├── data/
@@ -148,25 +149,19 @@ black-box-optimization/
 │   └── test_utils/
 │
 ├── docs/
-│   ├── project_roadmap.md        # Current structure and planned components
+│   ├── project_roadmap.md        # Current structure, notebook workflow, planned components
 │   ├── Capstone_Project_FAQs.md  # Capstone FAQs: data, submission, method
-│   ├── TECHNICAL_FOUNDATIONS.md  # Justification, key papers, library choices (see § References)
-│   └── Section_B_Reflection_Round6_CNN_and_BBO.md  # Module 17.1 reflection (optional copy for board)
+│   └── TECHNICAL_FOUNDATIONS.md  # Justification, key papers, library choices (see § References)
 │
 ├── scripts/                     # append_week{1..5}_results.py — append portal feedback to observations.csv
 │
-├── docs_private/                 # Private notes (mostly gitignored)
-│   ├── project_log.md            # Weekly evolution, assumptions, reflections
-│   ├── TODO.md
-│   ├── canvas_submissions_archive/  # Submitted reflections (Modules 12–17)
-│   └── similar_projects/        # Notes from BBO starter kit; HEBO and other references
-│
+├── docs_private/                 # Private notes (gitignored; structure not listed)
 ├── submission-template/          # Data sheet, model card, README for portfolio
 ├── requirements.txt
 └── README.md
 ```
 
-**Notebooks:** One notebook per function (1–8), all fully adapted and operational. **Function 2** is the canonical d=2 template; **Function 4** is the d≥3 template (extended from F3). All notebooks use three GP kernels (RBF, Matérn, RBF+WhiteKernel) with automatic best-kernel selection (LML), configurable kernel bounds, and ensemble/solo acquisition modes. **Function 1** retains the original full-options layout. F3–F8 use coarser visualisation grids (`n_grid_viz`) for fast plotting and finer Sobol candidate sets (`n_cand`, always a power of 2) for acquisition. d≥3 notebooks feature 2D pairwise projections with per-row colorbars and GP slices at median of held-out dimensions. **function_0_devel** (`docs_private/notebooks/`) is a 1D tutorial. See `docs_private/notes_and_references/function_notebook_adaptation_guide.md` for the full adaptation guide.
+**Notebooks:** One notebook per function (1–8), all fully adapted and operational. **Function 2** is the canonical d=2 template; **Function 4** is the d≥3 template (extended from F3). All notebooks use three GP kernels (RBF, Matérn, RBF+WhiteKernel) with automatic best-kernel selection (LML), configurable kernel bounds, and ensemble/solo acquisition modes. **Function 1** retains the original full-options layout. F3–F8 use coarser visualisation grids (`n_grid_viz`) for fast plotting and finer Sobol candidate sets (`n_cand`, always a power of 2) for acquisition. d≥3 notebooks feature 2D pairwise projections with per-row colorbars and GP slices at median of held-out dimensions. **function_0_devel** (`docs_private/notebooks/`) is a 1D tutorial. See `docs_private/40_notes_and_references/function_notebook_adaptation_guide.md` for the full adaptation guide.
 
 Further details on planned components are in `docs/project_roadmap.md`.
 
@@ -191,14 +186,14 @@ You are not required to build a submission optimizer from scratch or to find the
 
 3. **Notebook workflow** — Each notebook follows the same structure:
    - **1. Setup and load data** — Imports, repo root, load from local CSV or `initial_data`, flags.
-   - **2. Parameters** — Kernel choice (`GP_KERNEL = "auto"` or manual), `OPTIMIZE_KERNEL`, kernel bounds, acquisition coefficients (`XI_EI_PI`, `KAPPA_UCB`), candidate sampling, ensemble vs solo mode, `MIN_DIST_THRESHOLD` (min distance from existing observations; used to mask acquisition and for proximity check), `BOUNDARY_MARGIN` (optional; mask candidates near domain edges; 0.05 for low-d F1–F3, 0 for F4–F8).
+   - **2. Parameters** — Kernel choice (`GP_KERNEL = "auto"` or manual), `OPTIMIZE_KERNEL`, kernel bounds, **`OUTPUT_WARPING`** (`None` \| `"log"` \| `"boxcox"` — transform y before GP fit; F1, F5, F7 default to `"log"` for multi-scale/skewed y; others `None`), acquisition coefficients (`XI_EI_PI`, `KAPPA_UCB`), candidate sampling, ensemble vs solo mode, `MIN_DIST_THRESHOLD` (min distance from existing observations; used to mask acquisition and for proximity check), `BOUNDARY_MARGIN` (optional; mask candidates near domain edges; 0.05 for low-d F1–F3, 0 for F4–F8).
    - **3. Visualize** — Observations, distances, GP surrogate surfaces (2D contour for d=2; 2D pairwise slices for d≥3).
    - **4. Acquisition** — EI/PI/UCB computed for all three kernels; best kernel selected by LML. `next_x_high_dist` (fallback candidate) is computed in this cell. Candidates too close to existing observations (or, when `BOUNDARY_MARGIN` > 0, near domain edges) are masked; if the acquisition argmax would fall in that set, the next query uses the high-distance fallback. If `BOUNDARY_MARGIN` is not defined (e.g. parameters cell not run), it defaults to 0. Ensemble logic (when enabled) picks the next query.
    - **5. Select next query** — Default: EI argmax from the best kernel (subject to proximity masking). Alternatives: PI, UCB, exploit, explore. A proximity check warns or switches to the high-distance candidate when the suggested point is within `MIN_DIST_THRESHOLD` of any observation.
    - **6. Append new feedback** — After portal returns \((x,y)\), run with `IF_APPEND_DATA = True`.
    - **7. Save suggestion** — With `IF_EXPORT_QUERIES = True`, write `next_x` to `data/submissions/function_N/`.
 
-   **Templates:** **Function 2** is the d=2 template; **Function 4** is the d≥3 template (all F3–F8 are fully adapted). **Function 1** retains the original full-options layout. See `docs_private/notes_and_references/function_notebook_adaptation_guide.md` for the full adaptation guide and checklists.
+   **Templates:** **Function 2** is the d=2 template; **Function 4** is the d≥3 template (all F3–F8 are fully adapted). **Function 1** retains the original full-options layout. See `docs_private/40_notes_and_references/function_notebook_adaptation_guide.md` for the full adaptation guide and checklists.
 
 4. **Acquisition & utilities:** Notebooks use `skopt.acquisition` (`gaussian_ei`, `gaussian_pi`, `gaussian_lcb`) and `skopt.sampler` (Sobol/LHS). Alternative acquisition: `src/optimizers/bayesian/acquisition_functions.py`. Plot styling: `src/utils/plot_utilities.py`. **Tutorial:** `docs_private/notebooks/function_0_devel.ipynb`. Complete the submission using templates in `submission-template/`.
 
@@ -206,7 +201,7 @@ You are not required to build a submission optimizer from scratch or to find the
    ```bash
    python run_all.py
    ```
-   By default this runs any scripts in `scripts/` (e.g. `append_week1_results.py` through `append_week4_results.py` to append portal feedback to `data/problems/function_N/observations.csv`), then prints a **submission summary**: full portal strings (copy-paste per function) and where files live. Options:
+   By default this runs any scripts in `scripts/` (e.g. `append_week1_results.py` through `append_week5_results.py` to append portal feedback to `data/problems/function_N/observations.csv`), then prints a **submission summary**: full portal strings (copy-paste per function) and where files live. Options:
    - `python run_all.py --execute-notebooks` — run all 8 function notebooks (writes `data/submissions/function_N/`; needs `nbconvert`).
    - `python run_all.py --skip-scripts` — skip running any scripts in `scripts/` (if present); only show the summary.
 
@@ -215,16 +210,18 @@ You are not required to build a submission optimizer from scratch or to find the
 | File | Purpose |
 |------|---------|
 | **README.md** (this file) | Project overview, inputs/outputs, technical approach, structure, getting started |
-| **docs/project_roadmap.md** | Current structure, notebook workflow, planned components |
-| **docs/Capstone_Project_FAQs.md** | Capstone FAQs: data, submission, method |
+| **docs/project_roadmap.md** | Current structure, notebook workflow, planned components, run_all.py usage |
+| **docs/Capstone_Project_FAQs.md** | Capstone FAQs: data, submission, method, this repo’s acquisition and scripts |
 | **docs/TECHNICAL_FOUNDATIONS.md** | Technical justification, key papers (Rasmussen & Williams, Jones et al., NeurIPS 2020 BBO), library choices and alternatives |
-| **docs_private/notes_and_references/function_notebook_adaptation_guide.md** | Complete adaptation guide: F2 (d=2) / F4 (d≥3) templates, checklists, dimension reference, styling patterns |
-| **docs_private/notes_and_references/ensemble_acquisition_guide.md** | Ensemble EI+PI+UCB: agree/disagree logic, skopt usage |
+| **docs_private/40_notes_and_references/function_notebook_adaptation_guide.md** | Complete adaptation guide: F2 (d=2) / F4 (d≥3) templates, checklists, dimension reference, styling patterns |
+| **docs_private/40_notes_and_references/ensemble_acquisition_guide.md** | Ensemble EI+PI+UCB: agree/disagree logic, skopt usage |
 | **docs_private/project_log.md** | Weekly evolution, assumptions, results, reflections, peer ideas |
 | **docs_private/TODO.md** | Near-term tasks and status |
 | **docs_private/canvas_submissions_archive/canvas_submissions_all.md** | Archive of submitted reflections (Modules 12–17) |
 | **docs_private/similar_projects/** | Notes from BBO starter kit; HEBO and other references for optional follow-up |
 | **docs_private/notebooks/function_0_devel.ipynb** | 1D tutorial (tracked); GP kernels, skopt, ensemble |
+
+*Optional:* Add `docs/Section_B_Reflection_Round6_CNN_and_BBO.md` (or similar) when required for module reflection.
 
 *Note:* `docs_private/` is mostly gitignored; `function_0_devel.ipynb` is an exception (tracked).
 

@@ -8,6 +8,7 @@ from typing import Any, Callable
 
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib.colors as mcolors
 from matplotlib import cm
 from matplotlib.axes import Axes
 from matplotlib.colorbar import Colorbar
@@ -545,6 +546,79 @@ def plot_convergence(
     ax.grid(True, alpha=0.3)
     plt.tight_layout()
     return fig, ax
+
+
+def prepare_surface_for_plot(
+    z: np.ndarray,
+    n_levels: int = 30,
+    force_symlog: bool = False,
+) -> tuple[np.ndarray, np.ndarray, mcolors.Normalize]:
+    """Return (z_display, levels, norm) ready to pass to contourf / contour.
+
+    Display-only transform — does not affect model fitting or acquisition values.
+
+    Parameters
+    ----------
+    z : 2-D array
+        Surface values (e.g. GP mean, sigma, acquisition, or raw IDW y-grid).
+    n_levels : int
+        Number of contour fill levels. Default 30.
+    force_symlog : bool
+        If False (default): 2–98 percentile clip with linear Normalize.
+        Works well for smooth GP surfaces (mu, sigma, acquisition).
+        If True: SymLogNorm — use for raw y (IDW) surfaces where >90 % of
+        values are near-zero and the signal is an extreme outlier spanning
+        many decades (e.g. radiation-detection Function 1).
+
+    Returns
+    -------
+    z_display : ndarray
+        Clipped/unclipped array to pass as the ``Z`` argument of contourf.
+    levels : 1-D ndarray
+        Contour level boundaries (pass as ``levels=`` to contourf/contour).
+    norm : matplotlib Normalize (or SymLogNorm)
+        Colour normalisation (pass as ``norm=`` to contourf/contour).
+    """
+    z = np.asarray(z, dtype=float)
+    finite = np.isfinite(z)
+    if not finite.any():
+        dummy = np.zeros_like(z)
+        return dummy, np.linspace(-1.0, 1.0, int(n_levels)), mcolors.Normalize(-1, 1)
+
+    zf = z[finite]
+    zmin, zmax = float(np.min(zf)), float(np.max(zf))
+    if np.isclose(zmin, zmax, rtol=1e-6, atol=1e-30):
+        pad = max(abs(zmax) * 1e-3, 1e-9)
+        zmin, zmax = zmax - pad, zmax + pad
+
+    if force_symlog:
+        scale = max(abs(zmin), abs(zmax))
+        sig = np.abs(zf[np.abs(zf) > scale * 1e-8])
+        linthresh = float(np.percentile(sig, 10)) if sig.size else scale * 1e-4
+        linthresh = max(linthresh, 1e-30)
+        norm = mcolors.SymLogNorm(linthresh=linthresh, vmin=zmin, vmax=zmax)
+        neg, lin, pos = np.array([]), np.array([]), np.array([])
+        if zmin < -linthresh:
+            neg = -np.geomspace(linthresh, abs(zmin), n_levels // 3)[::-1]
+        lin = np.linspace(max(zmin, -linthresh), min(zmax, linthresh), n_levels // 4)
+        if zmax > linthresh:
+            pos = np.geomspace(linthresh, zmax, n_levels // 3)
+        levels = np.unique(np.concatenate([neg, lin, pos]))
+        levels = levels[(levels >= zmin) & (levels <= zmax)]
+        if len(levels) < 2:
+            levels = np.linspace(zmin, zmax, int(n_levels))
+        return z, levels, norm
+    else:
+        lo, hi = np.percentile(zf, [2.0, 98.0])
+        if np.isclose(lo, hi, atol=1e-30):
+            lo, hi = zmin, zmax
+        if np.isclose(lo, hi, atol=1e-30):
+            pad = max(abs(hi) * 1e-3, 1e-9)
+            lo, hi = hi - pad, hi + pad
+        norm = mcolors.Normalize(vmin=lo, vmax=hi)
+        z_clip = np.clip(z, lo, hi)
+        levels = np.linspace(lo, hi, int(n_levels))
+        return z_clip, levels, norm
 
 
 def plot_parallel_coordinates(
