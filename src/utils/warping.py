@@ -32,9 +32,10 @@ def apply_output_warping(y, mode=None, eps=1e-10):
     """
     y_orig = np.asarray(y, dtype=np.float64).ravel()
     warp_params = None
-    message = "No output warping (mode is None). GP fits raw y."
+    message = "Output warping: None. GP fits raw y. No transform applied."
 
-    if not mode:
+    # No operation when mode is None or explicitly "none" (case-insensitive)
+    if not mode or (isinstance(mode, str) and mode.strip().lower() == "none"):
         return y_orig.copy(), warp_params, message
 
     y_min = np.min(y_orig)
@@ -53,7 +54,7 @@ def apply_output_warping(y, mode=None, eps=1e-10):
         message = "Output warping: log applied. y now in warped space; GP and acquisition use warped y."
         return y_warped, warp_params, message
 
-    message = "OUTPUT_WARPING set but not 'boxcox' or 'log'; skipping."
+    message = "Output warping: None. GP fits raw y."
     return y_orig.copy(), warp_params, message
 
 

@@ -34,7 +34,7 @@ black-box-optimization/
 │   └── function_8_High-dimensional-ML-Model.ipynb # F8 (8D): 28 pairwise plots, per-row colorbars
 │
 ├── run_all.py                   # Submission summary (portal strings); --execute-notebooks runs all 8 notebooks
-├── scripts/                     # append_week{1..5}_results.py — portal feedback → observations.csv
+├── scripts/                     # append_week{1..6}_results.py — portal feedback → observations.csv
 ├── configs/
 │   └── problems/                 # (removed for now; see docs_private/private_notes.md)
 │
@@ -71,11 +71,11 @@ black-box-optimization/
 6. **Select & illustrate** — Final plot: d=2: 1×2 (mean + std); d≥3: pairwise GP slices with acquisition markers; `tight_layout(rect=[0,0,1,0.96])` + `suptitle(..., y=0.98)` avoids title overlap.
 7. **Export** — Append new observation (§6) and/or save next_x (§7).
 
-**F1** retains the original full-options layout (all acquisition functions, high-distance baseline, Thompson/Entropy). All F3–F8 notebooks are fully adapted with dimension-specific pair counts, per-row colorbars, and optimised rendering.
+**F1** retains the original full-options layout (all acquisition functions, high-distance baseline, Thompson/Entropy). F1 uses `MIN_DIST_THRESHOLD = 0.01` and replaces the proposed query with the high-distance fallback only for true duplicates (dist &lt; 1e-3), so proposals can refine near the best point. All F1 plot titles show `warping: {WARP_LABEL}`; IDW contour uses symlog only when warping is set; observation markers on the IDW plot are colored by y on the same scale as the contour. All F3–F8 notebooks are fully adapted with dimension-specific pair counts, per-row colorbars, and optimised rendering.
 
 For step-by-step adaptation checklists, see `docs_private/40_notes_and_references/function_notebook_adaptation_guide.md`.
 
-**run_all.py** — Run from project root. Runs any `scripts/*.py` (e.g. append_week1..5_results.py), then prints full portal strings for functions 1–8 and file paths. Use `--execute-notebooks` to run all 8 notebooks (generates submissions); `--skip-scripts` to skip running scripts.
+**run_all.py** — Run from project root. Runs any `scripts/*.py` (e.g. append_week1..6_results.py), then prints full portal strings for functions 1–8 and file paths. Use `--execute-notebooks` to run all 8 notebooks (generates submissions); `--skip-scripts` to skip running scripts.
 
 Write safety: `assert_not_under_initial_data(path, project_root)` only forbids writes under `project_root/initial_data/`; `data/results/`, `data/submissions/`, `data/problems/` are allowed.
 
